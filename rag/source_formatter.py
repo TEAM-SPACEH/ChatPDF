@@ -5,28 +5,40 @@ def format_sources(docs):
     for doc in docs:
         metadata = doc.metadata
 
-        # PDF에 저장된 메타데이터 가져오기
-        law_name = metadata.get("law_name", "법률명 미확인")
+        # PDF 메타데이터 가져오기
+        law_name = metadata.get("law_name")
         article = metadata.get("article")
-        source = metadata.get("source", "문서명 미확인")
+        source = metadata.get("source")
         page = metadata.get("page")
 
         # 파일 경로에서 파일명만 추출
-        filename = str(source).replace("\\", "/").split("/")[-1]
+        filename = ""
+        if source:
+            filename = str(source).replace("\\", "/").split("/")[-1]
 
-        # PyPDFLoader의 페이지 번호는 0부터 시작
+        # 페이지 번호 처리 (0부터 시작)
+        page_text = None
         if isinstance(page, int) and page >= 0:
             page_text = f"p.{page + 1}"
-        else:
-            page_text = "페이지 미확인"
 
-        # 출처 정보 구성
-        parts = [str(law_name)]
+        # 실제 존재하는 정보만 출처에 포함
+        parts = []
+
+        if law_name:
+            parts.append(str(law_name))
 
         if article:
             parts.append(str(article))
 
-        parts.extend([filename, page_text])
+        if filename:
+            parts.append(filename)
+
+        if page_text:
+            parts.append(page_text)
+
+        if not parts:
+            continue
+
         source_text = " · ".join(parts)
 
         # 중복 출처 제거
