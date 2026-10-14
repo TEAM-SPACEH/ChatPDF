@@ -1,9 +1,8 @@
-
 from langchain.retrievers.multi_query import MultiQueryRetriever
-from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_openai import ChatOpenAI
 
+from rag.prompts import get_labor_law_prompt
 from rag.source_formatter import format_sources
 
 
@@ -31,7 +30,7 @@ def answer(question, openai_key, db):
         llm=llm
     )
 
-    # 원본 Document 보관 (페이지 및 법률 정보 포함)
+    # 검색된 원본 Document 보관 (메타데이터 포함)
     docs = retriever.invoke(question)
 
     if not docs:
@@ -39,22 +38,19 @@ def answer(question, openai_key, db):
         return
 
     # 4. 검색된 문서 내용 정리
-    context = "\n\n".join(doc.page_content for doc in docs)
+    context = "\n\n".join(
+        doc.page_content for doc in docs
+    )
 
-    # 5. RAG 프롬프트
-    prompt = ChatPromptTemplate.from_template("""
-    제공된 참고 문서만을 기반으로 질문에 답변하세요.
-    문서에서 확인할 수 없는 내용은 추측하지 마세요.
-
-    [참고 문서]
-    {context}
-
-    [질문]
-    {question}
-    """)
+    # 5. 노동법 특화 프롬프트
+    prompt = get_labor_law_prompt()
 
     # 6. LCEL 체인 구성
-    rag_chain = prompt | llm | StrOutputParser()
+    rag_chain = (
+        prompt
+        | llm
+        | StrOutputParser()
+    )
 
     # 7. 답변 스트리밍
     text = ""
@@ -66,7 +62,7 @@ def answer(question, openai_key, db):
         text += chunk
         yield text
 
-    # 8. 검색된 참고 문서 표시
+    # 8. 검색된 참고 문서 출처 표시
     sources = format_sources(docs)
 
     yield f"{text}\n\n---\n**검색된 참고 문서**\n{sources}"
