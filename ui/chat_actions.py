@@ -1,5 +1,6 @@
 # UI B — 이벤트 핸들러 (RAG 결과를 화면에 맞게 가공)
-# 스트리밍 반영, 출처 표시, 로딩·오류 처리, 대화 초기화 등은 여기서 구현합니다.
+# 스트리밍 반영, 로딩·오류 처리, 대화 초기화 등은 여기서 구현합니다.
+# 출처 표시는 RAG의 answer()가 마지막 답변에 붙여서 돌려줍니다 (rag/source_formatter.py).
 import os
 import re
 import threading
@@ -57,7 +58,8 @@ def prepare_db():
                         model=EMBEDDING_MODEL, openai_api_key=_openai_key()
                     ),
                 )
-                count = db._collection.count()
+                # 내부 속성(_collection) 대신 공개 API로 청크 수를 셉니다.
+                count = len(db.get(include=[])["ids"])
                 if count == 0:
                     _db_error = f"'{COLLECTION_NAME}' 컬렉션이 비어 있어요. preprocessing.py를 다시 실행해 주세요."
                 else:
@@ -102,35 +104,16 @@ def on_ask(question, history):
         return
 
     if not text:
-        text = "답변을 생성하지 못했어요. 질문을 바꿔서 다시 시도해 주세요."
-    # 출처 데이터는 RAG 담당이 answer()에서 넘겨주면 연결합니다. 지금은 빈 값이라 생략됩니다.
-    history[-1] = {"role": "assistant", "content": text + format_sources([])}
-    yield history, ""
+        history[-1] = {
+            "role": "assistant",
+            "content": "답변을 생성하지 못했어요. 질문을 바꿔서 다시 시도해 주세요.",
+        }
+        yield history, ""
 
 
 def on_clear():
     # 벡터DB는 그대로 두므로 초기화 후에도 바로 다시 질문할 수 있습니다.
     return [], ""
-
-
-def format_sources(sources):
-    """sources: [{"source": 파일 경로, "page": 0부터 시작하는 페이지}, ...]"""
-    if not sources:
-        return ""
-
-    pages_by_file = {}
-    for src in sources:
-        name = str(src.get("source", "")).replace("\\", "/").split("/")[-1]
-        page = src.get("page")
-        pages = pages_by_file.setdefault(name, [])
-        if isinstance(page, int) and page + 1 not in pages:
-            pages.append(page + 1)
-
-    lines = []
-    for name, pages in pages_by_file.items():
-        page_text = ", ".join(f"p.{p}" for p in sorted(pages))
-        lines.append(f"📄 출처: {name}" + (f" · {page_text}" if page_text else ""))
-    return "\n\n---\n" + "\n".join(lines)
 
 
 def _mask_secret(message):
