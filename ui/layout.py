@@ -150,7 +150,9 @@ def build_layout():
 
     # B가 RAG 이벤트를 걸 컴포넌트만 반환합니다. (화면 전환 버튼은 넣지 않음)
     return {
+        "chatbot": chatbot,
         "question": question,
         "ask_btn": ask_btn,
-        "output": output,
+        "clear_btn": clear_btn,
+        "example_btns": example_btns,
     }

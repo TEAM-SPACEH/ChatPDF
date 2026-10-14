@@ -1,6 +1,6 @@
 
 from langchain.retrievers.multi_query import MultiQueryRetriever
-from langchain_core.prompts import ChatPromptTemplate
+from rag.prompts import get_labor_law_prompt
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
 from langchain_openai import ChatOpenAI
@@ -31,16 +31,7 @@ def answer(question, openai_key, db):
     )
 
     # 4. 기본 RAG 프롬프트
-    prompt = ChatPromptTemplate.from_template("""
-    제공된 참고 문서만을 기반으로 질문에 답변하세요.
-    문서에서 확인할 수 없는 내용은 추측하지 마세요.
-
-    [참고 문서]
-    {context}
-
-    [질문]
-    {question}
-    """)
+    prompt = get_labor_law_prompt()
 
     # 5. 검색된 문서 내용 정리
     def format_docs(docs):
