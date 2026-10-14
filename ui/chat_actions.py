@@ -7,5 +7,5 @@ def on_upload(pdf_path, openai_key):
     return build_db(pdf_path, openai_key)
 
 
-def on_ask(question, openai_key, db):
-    yield from answer(question, openai_key, db)
+def on_ask(question, db):
+    yield from answer(question, db)

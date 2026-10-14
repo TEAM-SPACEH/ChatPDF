@@ -1,18 +1,14 @@
-# UI B — 이벤트 연결 (.click / .submit / .upload, gr.State)
+# UI B — 이벤트 연결 (.click / .submit, gr.State)
 import gradio as gr
 
-from ui.chat_actions import on_ask, on_upload
+from ui.chat_actions import on_ask
 
 
 def bind_events(ui):
+    # PDF 업로드 화면을 제거했으므로 벡터DB는 만들지 않습니다.
+    # db_state는 빈 값(None)으로 두고, 답변은 모델 지식 기반으로 생성합니다.
     db_state = gr.State()
 
-    ui["pdf_file"].upload(
-        on_upload,
-        inputs=[ui["pdf_file"], ui["openai_key"]],
-        outputs=[db_state, ui["status"]],
-    )
-
-    ask_inputs = [ui["question"], ui["openai_key"], db_state]
+    ask_inputs = [ui["question"], db_state]
     ui["ask_btn"].click(on_ask, inputs=ask_inputs, outputs=ui["output"])
     ui["question"].submit(on_ask, inputs=ask_inputs, outputs=ui["output"])

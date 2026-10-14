@@ -1,1 +1,78 @@
 /* UI A — 화면 스타일 (app.py에서 demo.launch(css_paths=...)로 적용) */
+
+/* 전체 폭 제한 — 넓은 화면에서 너무 퍼지지 않게 */
+.gradio-container {
+  max-width: 860px !important;
+  margin: 0 auto !important;
+}
+
+#app-header h1 {
+  text-align: center;
+  margin-bottom: 0.2em;
+}
+
+/* ───────────── 홈 화면 ───────────── */
+#home-intro {
+  text-align: center;
+  margin: 10px 0 24px;
+}
+
+/* 홈 메뉴 버튼(카드) — 세로로 크게 */
+#home-menu {
+  max-width: 460px;
+  margin: 0 auto;
+  gap: 14px;
+}
+.nav-card button,
+button.nav-card {
+  width: 100%;
+  min-height: 72px !important;
+  font-size: 1.15rem !important;
+  font-weight: 600;
+  border-radius: 14px !important;
+}
+
+/* ───────────── 공통: 홈으로 돌아가기 ───────────── */
+.back-btn {
+  max-width: 120px;
+  margin-bottom: 8px;
+}
+
+/* 자주 묻는 Q&A — 아코디언 간격 */
+.faq-item {
+  margin-bottom: 6px;
+}
+
+/* 근로기준법 요약집 — 읽기 좋은 간격 */
+#labor-law {
+  line-height: 1.7;
+}
+#labor-law h3 {
+  margin-top: 1.2em;
+}
+
+/* 챗봇 화면 — 설정 영역 */
+#chat-settings {
+  gap: 12px;
+}
+
+#footer {
+  margin-top: 18px;
+  text-align: center;
+  opacity: 0.7;
+}
+
+/* 반응형: 좁은 화면(768px 이하)에서는 세로로 한 줄씩 쌓기 */
+@media (max-width: 768px) {
+  .gradio-container {
+    max-width: 100% !important;
+  }
+  #chat-settings {
+    flex-direction: column;
+  }
+  .nav-card button,
+  button.nav-card {
+    min-height: 60px !important;
+    font-size: 1.05rem !important;
+  }
+}
