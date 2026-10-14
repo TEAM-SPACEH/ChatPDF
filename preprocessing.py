@@ -21,7 +21,7 @@ DB_DIR = BASE_DIR / "chroma_db"
 
 def build_db(pdf_path, openai_key):
     if not openai_key:
-        return None, "⚠️ OpenAI API 키를 먼저 입력한 뒤 PDF를 다시 올려주세요."
+        raise ValueError("OPENAI_API_KEY가 설정되지 않았습니다. .env를 확인하세요.")
     if pdf_path is None:
         return None, ""
     
