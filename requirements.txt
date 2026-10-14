@@ -9,3 +9,5 @@ langchainhub==0.1.21
 pypdf==6.20.1
 # 0.8.0부터 hub.pull("rlm/rag-prompt") 같은 공개 프롬프트를 기본 차단함 → 0.7.x 고정
 langsmith==0.7.38
+
+python-dotenv
