@@ -3,7 +3,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_openai import ChatOpenAI
 from sqlalchemy import text
 
-from rag.prompts import get_labor_law_prompt
+from rag.prompts import get_labor_law_prompt, get_query_expansion_prompt
 from rag.source_formatter import format_sources
 
 from rag.evidence_selector import select_evidence
@@ -28,9 +28,11 @@ def answer(question, openai_key, db):
     )
 
     # 3. 관련 법률 문서 검색
+    # 일상어 질문을 법률 용어 검색 질문으로 바꿔 함께 검색합니다 (원래 질문도 포함)
     retriever = MultiQueryRetriever.from_llm(
         retriever=db.as_retriever(search_kwargs={"k": 6}),
         llm=llm,
+        prompt=get_query_expansion_prompt(),
         include_original=True
     )
 
