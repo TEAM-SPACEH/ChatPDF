@@ -746,26 +746,166 @@ html[data-font-size="xxl"] {
   }
 }
 
-/* 반응형: 좁은 화면(768px 이하)에서는 세로로 한 줄씩 쌓기 */
+/* 휴대폰(768px 이하) — 바깥 틀과 푸터.
+   Gradio는 이 파일의 선택자 앞에 ".contain"을 붙이는데, .gradio-container로 시작하는 맨 바깥 규칙만 예외입니다.
+   그래서 이 둘은 아래 @media 블록에 넣지 않고 규칙 안에 @media를 둡니다. */
+.gradio-container {
+  @media (max-width: 768px) {
+    /* 휴대폰 하단 툴바·홈 인디케이터에 마지막 요소가 가리지 않게 */
+    padding-bottom: calc(16px + env(safe-area-inset-bottom)) !important;
+    --layout-gap: 12px; /* Gradio 블록 사이 기본 간격(24px)이 휴대폰에선 너무 넓음 */
+    /* Gradio 기본값 overflow: hidden은 아래 #input-row의 position: sticky를 막습니다.
+       clip은 넘치는 부분을 똑같이 잘라내면서 sticky는 살려둡니다. */
+    overflow: clip !important;
+  }
+}
+/* 좌우 여백 — Gradio 기본값 32px은 휴대폰 폭의 1/6을 차지하므로 16px로 */
+.gradio-container .main {
+  @media (max-width: 768px) {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+}
+/* Gradio 기본 푸터(Built with Gradio 등)는 휴대폰에서 자리만 차지하므로 숨김 */
+.gradio-container footer {
+  @media (max-width: 768px) {
+    display: none !important;
+  }
+}
+
+/* 반응형: 좁은 화면(768px 이하, 휴대폰) — 데스크톱 값은 그대로 두고 여기서만 덮어씁니다.
+   목표: 챗봇 화면이 스크롤 없이 한 화면에 들어오고, 질문 입력줄이 항상 보이게. (이슈 #37) */
 @media (max-width: 768px) {
-  .gradio-container {
-    padding-top: 0 !important;
+  /* 맨 위 언어·글자 크기 버튼을 조금 작게 */
+  #lang-btn,
+  .font-size-toggle {
+    padding: 5px 11px !important;
+    font-size: 0.84rem !important;
   }
+
+  /* 홈 — 로고를 줄이고 간격을 좁혀 메뉴가 첫 화면에 들어오게 */
   #screen-home {
-    padding-top: 8px;
+    padding-top: 0;
+    gap: 20px;
   }
+  .home-logo {
+    width: 78%;
+    margin: 0 auto;
+  }
+  .home-hero p {
+    font-size: 0.98rem;
+  }
+  .menu-btn {
+    min-height: 60px;
+    padding: 0 20px !important;
+    font-size: 1.08rem !important;
+  }
+
+  /* 각 화면 위쪽 바와 면책 고지 */
+  .screen-bar {
+    min-height: 40px;
+    margin-bottom: 0;
+  }
+  .screen-title h2 {
+    font-size: 1.12rem;
+  }
+  .notice {
+    margin: 0 !important;
+    padding: 8px 12px !important;
+    font-size: 0.8rem;
+  }
+
+  /* 준비 중 화면 — 빈 공간 줄이고 말풍선 줄바꿈을 고르게 */
+  .coming-soon {
+    padding: 32px 0;
+  }
+  .judge-hero-bubble {
+    max-width: 92%;
+    padding: 7px 14px;
+    border-radius: 14px;
+    font-size: 0.95rem;
+    line-height: 1.4;
+    text-wrap: balance;
+  }
+
   #tabs button[role="tab"] {
     margin-right: 14px;
+    padding: 6px 2px !important;
+  }
+
+  /* 채팅창 — 화면 높이에서 위쪽 바·탭·추천 질문·입력줄 높이를 뺀 만큼만 차지 (Gradio가 넣는 height를 덮어씀) */
+  #chatbot {
+    height: calc(100dvh - 400px) !important;
+    min-height: 220px !important;
+  }
+  /* 대화 말풍선 — 안쪽 여백과 줄 간격을 줄여 한 화면에 더 많이 보이게 */
+  #chatbot {
+    line-height: 1.55;
+    --radius-md: 14px;
+  }
+  #chatbot .bot {
+    padding: 8px 12px !important;
+  }
+  #chatbot .user {
+    padding: 7px 12px !important;
+  }
+  #chatbot .avatar-container {
+    width: 32px !important;
+    height: 32px !important;
+  }
+  /* 빈 채팅 안내 — 캐릭터와 글을 작게 */
+  .judge-hero {
+    gap: 10px;
+  }
+  .judge-hero-figure {
+    --w: 76px;
+  }
+  .judge-hero-guide {
+    margin: 0;
+    font-size: 0.8rem;
+    line-height: 1.55;
+  }
+
+  /* 추천 질문 — 세로로 쌓지 않고 가로로 밀어 넘기는 한 줄 */
+  #example-row {
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    margin-top: 0;
+    scrollbar-width: none;
+  }
+  #example-row::-webkit-scrollbar {
+    display: none;
   }
   .example-btn {
-    flex: 1 1 100% !important;
-    text-align: left;
+    flex: 0 0 auto !important;
+    white-space: nowrap;
   }
-  /* 입력줄은 좁은 화면에서도 가로 한 줄 유지 (메신저처럼) */
+
+  /* 입력줄은 좁은 화면에서도 가로 한 줄 유지 (메신저처럼), 스크롤해도 화면 아래에 붙어 있게 */
   #input-row {
     flex-wrap: nowrap;
+    position: sticky;
+    bottom: calc(8px + env(safe-area-inset-bottom));
+    z-index: 5;
+    margin-top: 0;
+    padding: 4px;
+  }
+  #question textarea {
+    padding: 8px 10px;
+  }
+  /* 긴 안내 문구는 한 줄로 자르고 … 표시 */
+  #question textarea::placeholder {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   #ask-btn {
-    min-width: 72px !important;
+    flex: 0 0 auto !important;
+    min-width: 0 !important;
+    padding: 0 16px !important;
+    white-space: nowrap; /* "질문하기"가 두 줄로 나뉘지 않게 */
+  }
+  #clear-btn {
+    margin-top: -4px;
   }
 }

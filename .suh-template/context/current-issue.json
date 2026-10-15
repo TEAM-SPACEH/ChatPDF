@@ -1,0 +1,7 @@
+{
+  "issue_number": 37,
+  "issue_title": "[디자인][UI] 모바일 화면 규격 최적화",
+  "issue_url": "https://github.com/TEAM-SPACEH/ChatPDF/issues/37",
+  "branch_name": "feat/mobile-layout",
+  "commit_template": "feat : {설명} https://github.com/TEAM-SPACEH/ChatPDF/issues/37"
+}
