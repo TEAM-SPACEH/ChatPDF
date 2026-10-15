@@ -3,6 +3,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_openai import ChatOpenAI
 
 from rag.prompts import get_labor_law_prompt, get_query_expansion_prompt
+from rag.referral import find_referral
 from rag.source_formatter import format_sources
 
 from rag.evidence_selector import select_evidence
@@ -15,18 +16,22 @@ CONSULT_NOTICE = "> 정확한 판단이 필요하면 고용노동부 고객상�
 REFUSAL_PHRASES = ("확인되지 않습니다", "확인하지 못했습니다", "찾지 못했습니다")
 
 
-def finalize_answer(text, docs=()):
+def finalize_answer(text, docs=(), question=""):
     """답변 끝에 출처와 상담 안내를 붙입니다.
 
     첫 문장에서 '확인되지 않는다'고만 답한 경우에는 출처를 붙이지 않습니다. 근거가 없다면서
     근거 목록을 보여주면 헷갈리기 때문입니다. 답변 중간에 일부만 확인되지 않는다고 한 경우나
     '참고로' 다른 제도를 안내한 경우에는 출처를 붙입니다.
+    거절한 질문이 지식베이스 밖 주제(4대 보험·실업급여 등)면 담당 기관을 함께 안내합니다 (rag/referral.py).
     """
     first_line = text.strip().split("\n", 1)[0]
     refused = any(p in first_line for p in REFUSAL_PHRASES) and "참고로" not in text
     parts = [text.rstrip()]
     if docs and not refused:
         parts.append(f"---\n**선별된 참고 조항**\n{format_sources(docs)}")
+    referral = find_referral(question) if refused else ""
+    if referral:
+        parts.append(f"**어디에 물어보면 되나요?**\n{referral}")
     parts.append(CONSULT_NOTICE)
     return "\n\n".join(parts)
 
@@ -62,14 +67,14 @@ def answer(question, openai_key, db):
     docs = retriever.invoke(question)
 
     if not docs:
-        yield finalize_answer("관련 법률 문서를 찾지 못했습니다.")
+        yield finalize_answer("관련 법률 문서를 찾지 못했습니다.", question=question)
         return
 
     # 질문과 직접 관련된 법률 근거 선별
     selected_docs = select_evidence(question, docs, llm)
 
     if not selected_docs:
-        yield finalize_answer("제공된 법률 문서에서 질문에 적용할 근거를 확인하지 못했습니다.")
+        yield finalize_answer("제공된 법률 문서에서 질문에 적용할 근거를 확인하지 못했습니다.", question=question)
         return
 
     # 선별된 법률 근거만 LLM에 전달
@@ -102,4 +107,4 @@ def answer(question, openai_key, db):
         yield text
 
     # 8. 출처(거절 답변이면 생략)와 상담 안내 표시
-    yield finalize_answer(text, selected_docs)
+    yield finalize_answer(text, selected_docs, question)
