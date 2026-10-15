@@ -14,3 +14,4 @@ chroma_db/
 .DS_Store
 chroma_db_v2/
 chroma_db_backup_v1/
+chroma_db_chunk_*/
