@@ -1,0 +1,74 @@
+/* 임금체불 사업주 조회 화면 (ui/arrears_tab.py) — 이 화면에서만 쓰는 스타일.
+   기존 ui/style.css는 건드리지 않고, 색은 테마 변수(var(--...))를 그대로 씁니다. */
+.arrears-mock-banner {
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color-accent-subdued);
+  background: var(--color-accent-soft);
+  color: var(--body-text-color);
+  font-weight: 600;
+  line-height: 1.6;
+}
+.arrears-mock-banner span {
+  font-weight: 400;
+  color: var(--body-text-color-subdued);
+}
+.arrears-demo-label p {
+  margin: 8px 0 0;
+  font-size: 0.9rem;
+  color: var(--body-text-color-subdued);
+}
+.arrears-result {
+  margin-top: 8px;
+  padding: 20px;
+  border: 1px solid var(--border-color-primary);
+  border-radius: 12px;
+  background: var(--background-fill-primary);
+  line-height: 1.7;
+}
+.arrears-result h4 {
+  margin: 20px 0 6px;
+  font-size: 1.02rem;
+}
+.arrears-result ul {
+  margin: 0;
+  padding-left: 1.2em;
+}
+.arrears-result a {
+  color: var(--lg-accent);
+}
+.arrears-result > .arrears-mock-banner:last-child {
+  margin: 20px 0 0;
+}
+.arrears-query {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 16px;
+  margin: 0;
+}
+.arrears-query dt {
+  color: var(--body-text-color-subdued);
+}
+.arrears-query dd {
+  margin: 0;
+  font-weight: 600;
+}
+.arrears-status {
+  display: inline-block;
+  padding: 2px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border-color-primary);
+  font-weight: 700;
+}
+.arrears-listed .arrears-status {
+  border-color: var(--lg-accent);
+  color: var(--lg-accent);
+}
+.arrears-records li {
+  margin-bottom: 6px;
+}
+.arrears-empty {
+  margin: 8px 0 0;
+  color: var(--body-text-color-subdued);
+}
