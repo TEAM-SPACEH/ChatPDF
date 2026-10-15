@@ -352,7 +352,9 @@ html[data-font-size="xxl"] {
 #language {
   position: absolute;
   top: 100%;
-  right: 0;
+  /* 지구본 버튼(top-controls의 왼쪽 항목) 바로 아래로 내려오도록 왼쪽 기준 정렬 */
+  left: 0;
+  right: auto;
   z-index: 20;
   width: max-content !important;
   min-width: 150px;
