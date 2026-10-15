@@ -9,7 +9,7 @@ UI A는 **화면에 보이는 것**을 만들고, UI B는 **그 화면이 어떻
 
 | 구분 | 파일 |
 | --- | --- |
-| ✅ 수정하는 파일 | `ui/layout.py`, `ui/content.py`, `ui/style.css` |
+| ✅ 수정하는 파일 | `ui/layout.py`, `ui/content.py`, `ui/font_size.py`, `ui/style.css` |
 | ❌ 수정하지 않는 파일 | `ui/events.py`, `ui/chat_actions.py`, `rag/` |
 
 `app.py`는 테마(`THEME`)와 CSS를 `demo.launch()`에 넘기는 줄만 A와 관련 있습니다.
@@ -28,11 +28,11 @@ UI A는 **화면에 보이는 것**을 만들고, UI B는 **그 화면이 어떻
 ## 2. 화면 구조
 
 ```
-🛡️ 노동 지킴이 / 한 줄 소개          ← #app-header
-⚠️ 면책 고지 · ☎1350                ← #notice (README 6-1, 항상 보이게)
-[💬 질문하기] [📋 Q&A] [⚖️ 법령 요약]   ← gr.Tabs
- ├ 질문하기: chatbot → 추천 질문 → 입력창 + 질문하기 → 대화 초기화
- ├ Q&A: 아코디언 + 출처·기준일
+노동 지킴이 / 한 줄 소개     글자 크기 [보통][크게][아주 크게]   ← #top-row (#app-header + #font-size)
+면책 고지 · 1350                                               ← #notice (README 6-1, 항상 보이게)
+[질문하기] [자주 묻는 질문] [법령 요약]                          ← gr.Tabs
+ ├ 질문하기: chatbot → 추천 질문 → 입력창 + 질문하기 → 대화 지우기
+ ├ 자주 묻는 질문: 아코디언 + 출처·기준일
  └ 법령 요약: 요약 Markdown + 출처·기준일
 ```
 
@@ -45,13 +45,20 @@ UI A는 **화면에 보이는 것**을 만들고, UI B는 **그 화면이 어떻
 | --- | --- |
 | `ui/layout.py` | `build_layout()`이 컴포넌트를 배치하고 **dict로 반환**합니다. 테마 `THEME`도 여기서 정의합니다. |
 | `ui/content.py` | 서비스명, 안내 문구, 추천 질문, Q&A, 법령 요약 같은 **글자만** 둡니다. 문구 검수는 이 파일만 보면 됩니다. |
-| `ui/style.css` | 색·간격·반응형. |
+| `ui/font_size.py` | 글자 크기 조절(보통/크게/아주 크게). 아래 '글자 크기 조절' 참고. |
+| `ui/style.css` | 색·간격·반응형, 글자 크기 단계별 값. |
 
 `layout.py` 규칙:
 - `layout.py` 안에서 `gr.Blocks()`를 새로 열지 않습니다. 이미 `app.py`에서 열려 있습니다.
 - `rag/`나 `ui/events.py`, `ui/chat_actions.py`를 import하지 않습니다.
 - 이벤트(`.click` 등)를 걸지 않습니다. 버튼을 만들기만 하고 dict에 담아 넘깁니다.
 - 레이아웃용 컴포넌트(`gr.Row`, `gr.Tab`, 꾸밈용 `gr.Markdown`)는 dict에 넣지 않습니다. **B가 이벤트를 걸어야 하는 컴포넌트만** 넣습니다.
+
+### 글자 크기 조절 (`ui/font_size.py`)
+
+- **브라우저에서만** 동작합니다. `gr.HTML`의 `js_on_load`가 버튼을 누르면 `<html data-font-size="lg|xl">`을 바꾸고, 고른 값을 `localStorage`(`nodong-font-size`)에 저장합니다. 서버 이벤트가 아니라서 key 표와 `ui/events.py`에는 들어가지 않습니다.
+- 실제 크기는 `ui/style.css`의 `html[data-font-size=...]` 규칙이 정합니다. Gradio 글자 변수(`--text-xs` ~ `--text-xxl`)와 `html` 글자 크기를 같은 비율(크게 ×1.15, 아주 크게 ×1.3)로 키웁니다.
+- 그래서 새 스타일을 쓸 때 글자 크기는 **`rem`이나 Gradio 변수(`var(--text-md)` 등)로** 씁니다. `px`로 고정하면 글자 크기 조절을 따라오지 않습니다.
 
 ## 4. 컴포넌트 key 목록 (A↔B 약속)
 
@@ -105,4 +112,5 @@ UI A는 **화면에 보이는 것**을 만들고, UI B는 **그 화면이 어떻
 - [ ] `python app.py`로 실행해서 화면이 뜬다
 - [ ] 화면에 실제 없는 기능(예: 계약서 업로드)을 안내하는 문구가 없다
 - [ ] 면책 고지와 ☎1350 안내가 항상 보인다
+- [ ] 글자 크기를 '아주 크게'로 바꿔도 PC·모바일 화면이 깨지지 않는다
 - [ ] PC 화면과 좁은 화면(768px 이하) 캡처를 PR 본문에 첨부했다
