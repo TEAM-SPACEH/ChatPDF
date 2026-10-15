@@ -77,6 +77,14 @@ class JudgeTest(unittest.TestCase):
         text = "제공된 법률 문서에서 확인되지 않습니다."
         self.assertEqual(run_eval.judge(ROW_UNKNOWN, text)[:2], ("-", "O"))
 
+    def test_trailing_unknown_after_made_up_answer_is_hallucination(self):
+        text = "산재 신청은 신청서를 내면 됩니다.\n추가 세부사항은 제공된 법률 문서에서 확인되지 않습니다."
+        self.assertEqual(run_eval.judge(ROW_UNKNOWN, text)[:2], ("-", "X"))
+
+    def test_partial_unknown_in_answer_is_not_over_refusal(self):
+        text = make_answer("30일 전에 예고해야 합니다.\n세부 금액은 확인되지 않습니다.", [doc("근로기준법", "제26조", 3)])
+        self.assertEqual(run_eval.judge(ROW_FACT, text)[:2], ("O", "-"))
+
     def test_unknown_question_answered_is_hallucination(self):
         text = make_answer("올해 최저시급은 10,000원입니다.", [doc("최저임금법", "제5조", 0)])
         self.assertEqual(run_eval.judge(ROW_UNKNOWN, text)[:2], ("-", "X"))
