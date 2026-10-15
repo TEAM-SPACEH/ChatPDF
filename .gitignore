@@ -14,3 +14,6 @@ chroma_db/
 .DS_Store
 chroma_db_v2/
 chroma_db_backup_v1/
+# 이슈 작성 도구(suh-template) 로컬 산출물
+.suh-template/
+docs/suh-template/
