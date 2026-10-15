@@ -11,6 +11,7 @@ README의 목표 지표 4가지(정답률·근거 일치율·모름 처리율·�
 | `holdout.csv` | **새 질문 10개** — 개선 작업 중에는 보지 않고, 개선이 평가셋에만 맞춘 것인지 확인할 때만 씀 |
 | `questions_form.csv` · `holdout_form.csv` | **수업 제출 양식**(No·질문·정답 (요약)·근거 페이지·질문 유형·개선 전·개선 후·출처 일치·비고). `export_form.py`로 결과 폴더에서 만듦 |
 | `run_eval.py` | 질문셋을 돌려 답변·출처·응답 시간을 저장하고 지표를 계산 |
+| `chunk_experiment.py` | 청크 설정 비교 실험용 DB 만들기 (문자 100·500·1000자). 결과는 [`REPORT.md`](REPORT.md) 3장 |
 | `test_run_eval.py` | 판정·지표 계산 로직 테스트 (API 호출 없음) |
 | `results/<시각>-<이름>/` | 실행 결과. `results.csv`(질문별 답변·인용 조문·실제 검색 질문·판정)와 `summary.md`(지표 요약) |
 
@@ -104,6 +105,12 @@ python eval/run_eval.py --questions eval/holdout.csv --label holdout-<이름>
   - `chroma_db_backup_v1/`은 git에 없어요. 첫 커밋 방식(100자 단위)으로 만든 DB를 이 이름으로 두면 돼요.
 - **개선 후**: 기능 개선이 반영된 코드(#33 기준)로 같은 질문을 측정
 - 여러 결과를 한 표로: `python eval/compare.py 개선전=eval/results/<폴더> 개선후=eval/results/<폴더>`
+- 청크 설정 비교: 실험용 DB를 만들고(임베딩 비용 발생) 같은 질문으로 평가
+  ```bash
+  python eval/chunk_experiment.py --dry-run     # 조각 수만 세기 (API 호출 없음)
+  python eval/chunk_experiment.py char500       # chroma_db_chunk_char500/ 만들기
+  python eval/run_eval.py --db-dir chroma_db_chunk_char500 --label chunk-char500
+  ```
 
 | 지표 | 목표 | 개선 전 | 개선 후 |
 | --- | --- | --- | --- |
