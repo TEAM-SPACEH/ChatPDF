@@ -1,3 +1,16 @@
+---
+title: 서명 잠깐만
+emoji: 🛡️
+colorFrom: red
+colorTo: gray
+sdk: gradio
+sdk_version: 6.30.0
+python_version: "3.11"
+app_file: app.py
+pinned: false
+short_description: 근거 조문과 함께 답하는 노동법 RAG 챗봇
+---
+
 <div align="center">
 
 # <img src="docs/images/서명잠깐만로고.webp" width="480" />

@@ -4,6 +4,8 @@ langchain-core==0.3.86
 langchain-community==0.3.31
 langchain-openai==0.3.35
 langchain-chroma==0.2.6
+# chroma_db/를 만든 버전과 맞춰야 배포 서버에서 DB를 그대로 읽을 수 있음
+chromadb==1.5.9
 langchain-text-splitters==0.3.11
 langchainhub==0.1.21
 pypdf==6.20.1
