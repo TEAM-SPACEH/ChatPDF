@@ -15,6 +15,7 @@ from arrears.service import (
 )
 
 MOCK_NOTICE = "목업 데이터"
+LOADING_TEXT = "사업장 정보를 불러오고 있어요"
 
 STATUS_TEXT = {
     LISTED: (
@@ -118,7 +119,8 @@ def on_lookup(business_number):
     return render_result(result)
 
 
-def build_arrears_tab():
+def build_arrears_tab(loading_html):
+    """loading_html(문구)는 ui/layout.py의 judge_loading_html — 조회하는 동안 결과 자리에 판사 애니메이션을 띄웁니다."""
     gr.Markdown("### 일하기 전에 사업장을 확인해 보세요")
     business_number = gr.Textbox(
         label="사업자등록번호",
@@ -130,5 +132,9 @@ def build_arrears_tab():
 
     out = gr.HTML(padding=False, elem_id="arrears-result")
 
-    btn.click(on_lookup, business_number, out)
-    business_number.submit(on_lookup, business_number, out)
+    # 조회하는 동안: Gradio 기본 로딩 표시 대신 결과 자리 가운데에 판사 + 안내 문구
+    loading = loading_html(LOADING_TEXT)
+    for event in (btn.click, business_number.submit):
+        event(lambda: loading, None, out, queue=False, show_progress="hidden").then(
+            on_lookup, business_number, out, show_progress="hidden"
+        )
