@@ -8,9 +8,12 @@
   --lg-mark: #ffe45c; /* 형광펜 */
   --lg-tab-idle: #98a2b3; /* 고르지 않은 탭 글자 */
 }
+/* 다크 모드: 남색 강조색은 어두운 바탕에 묻히므로, 다크 모드 버튼(THEME)과 같은 밝은 색으로 바꿉니다.
+   Gradio 테마에는 color_accent의 다크 값이 없어서 여기서 직접 덮어씁니다. */
 .dark {
   --lg-mark: rgba(255, 228, 92, 0.32);
-  --lg-tab-idle: #6b7689;
+  --lg-tab-idle: #8b96a8;
+  --color-accent: #d6deec;
 }
 
 /* 한 줄이 80자를 넘지 않도록 폭을 좁게. width를 고정해야 탭을 바꿀 때 폭이 들쭉날쭉하지 않습니다. */
