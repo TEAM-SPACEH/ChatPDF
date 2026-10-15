@@ -42,7 +42,7 @@ def language_button_text(value):
 # ──────────────────────────────────────────────────────────────────────────
 I18N = {
     "Korean": {
-        "app_name": "노동 지킴이",
+        "app_name": "서명 잠깐만",
         "tagline": "근로계약·임금·휴가·해고, 서명하기 전에 물어보세요.",
         "notice": (
             "법률 자문이 아닌 정보 제공용 서비스입니다. "
@@ -118,7 +118,7 @@ I18N = {
         ],
     },
     "Japanese": {
-        "app_name": "労働ガーディアン",
+        "app_name": "サインちょっと待って",
         "tagline": "労働契約・賃金・休暇・解雇、署名する前に質問してください。",
         "notice": (
             "法律相談ではなく情報提供のためのサービスです。"
@@ -195,7 +195,7 @@ I18N = {
         ],
     },
     "English": {
-        "app_name": "Labor Guardian",
+        "app_name": "Wait Before You Sign",
         "tagline": "Employment contracts, wages, leave, dismissal — ask before you sign.",
         "notice": (
             "This service provides information, not legal advice. "
@@ -277,7 +277,7 @@ I18N = {
         ],
     },
     "Chinese": {
-        "app_name": "劳动守护者",
+        "app_name": "签字前等一下",
         "tagline": "劳动合同、工资、休假、解雇——签字前先来问问。",
         "notice": (
             "本服务仅提供信息，不构成法律咨询。"
@@ -350,7 +350,7 @@ I18N = {
         ],
     },
     "Vietnamese": {
-        "app_name": "Người Bảo Vệ Lao Động",
+        "app_name": "Khoan Đã Ký",
         "tagline": "Hợp đồng lao động, tiền lương, nghỉ phép, sa thải — hãy hỏi trước khi ký.",
         "notice": (
             "Đây là dịch vụ cung cấp thông tin, không phải tư vấn pháp lý. "
