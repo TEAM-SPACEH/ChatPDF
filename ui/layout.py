@@ -12,7 +12,8 @@ from ui.content import (
     EXAMPLE_QUESTIONS,
     FAQ_ITEMS,
     JUDGE_GREETING,
-    LABOR_LAW_MD,
+    MENU_ITEMS,
+    COMING_SOON,
     NOTICE,
     QUESTION_PLACEHOLDER,
     SOURCE_NOTE,
@@ -111,10 +112,77 @@ CHAT_EMPTY_HTML = f"""
 """
 
 
-def build_layout():
-    gr.Markdown(f"# {APP_NAME}\n{TAGLINE}", elem_id="app-header")
-    gr.Markdown(NOTICE, elem_id="notice")
+# 홈 맨 위: 판사 캐릭터 + 서비스명 + 한 줄 소개
+HOME_HERO_HTML = f"""
+<div class="home-hero">
+  <div class="judge-figure" role="img" aria-label="판사 캐릭터"></div>
+  <h1>{APP_NAME}</h1>
+  <p>{TAGLINE}</p>
+</div>
+"""
 
+# 아직 준비 중인 화면: 판사가 말풍선으로 안내
+COMING_SOON_HTML = f"""
+<div class="judge-hero coming-soon">
+  <p class="judge-hero-bubble">{COMING_SOON}</p>
+  <div class="judge-hero-figure" role="img" aria-label="판사 캐릭터"></div>
+</div>
+"""
+
+MENU_LABELS = dict(MENU_ITEMS)
+
+
+def _screen_bar(title):
+    """각 화면 위쪽 바: 왼쪽 뒤로가기 아이콘 + 가운데 화면 이름. 버튼은 B가 이벤트를 걸도록 돌려줍니다."""
+    with gr.Row(elem_classes="screen-bar"):
+        # 글자는 화면에서 숨기고 아이콘만 보입니다(style.css). 화면 낭독기는 이 글자를 읽습니다.
+        home_btn = gr.Button("홈으로", scale=0, min_width=44, elem_classes="home-btn")
+        gr.Markdown(f"## {title}", elem_classes="screen-title")
+    gr.Markdown(NOTICE, elem_classes="notice")
+    return home_btn
+
+
+def build_layout():
+    # ───────── 홈 ─────────
+    with gr.Column(visible=True, elem_id="screen-home") as home_screen:
+        gr.HTML(HOME_HERO_HTML, padding=False)
+        with gr.Column(elem_id="home-menu"):
+            menu_btns = {
+                key: gr.Button(label, elem_id=f"menu-{key}", elem_classes="menu-btn")
+                for key, label in MENU_ITEMS
+            }
+        gr.Markdown(NOTICE, elem_classes="notice")
+
+    # ───────── 노동법 챗봇 (기존 탭 3개) ─────────
+    with gr.Column(visible=False, elem_id="screen-chat") as chat_screen:
+        chat_home_btn = _screen_bar(MENU_LABELS["chat"])
+        chat = _chat_tabs()
+
+    # ───────── 준비 중인 화면 ─────────
+    with gr.Column(visible=False, elem_id="screen-villain") as villain_screen:
+        villain_home_btn = _screen_bar(MENU_LABELS["villain"])
+        gr.HTML(COMING_SOON_HTML, padding=False)
+
+    with gr.Column(visible=False, elem_id="screen-calc") as calc_screen:
+        calc_home_btn = _screen_bar(MENU_LABELS["calc"])
+        gr.HTML(COMING_SOON_HTML, padding=False)
+
+    # B가 이벤트를 걸 컴포넌트만 반환합니다. (docs/ui-layout-rules.md 4번 표)
+    return {
+        **chat,
+        "screens": {
+            "home": home_screen,
+            "chat": chat_screen,
+            "villain": villain_screen,
+            "calc": calc_screen,
+        },
+        "menu_btns": menu_btns,
+        "home_btns": [chat_home_btn, villain_home_btn, calc_home_btn],
+    }
+
+
+def _chat_tabs():
+    """노동법 챗봇 화면의 탭 2개(질문하기·자주 묻는 질문). 채팅 컴포넌트를 dict로 돌려줍니다."""
     with gr.Tabs(elem_id="tabs"):
         with gr.Tab("질문하기", id="chat", elem_id="tab-chat"):
             chatbot = gr.Chatbot(
@@ -149,11 +217,6 @@ def build_layout():
                     gr.Markdown(a)
             gr.Markdown(SOURCE_NOTE, elem_classes="source-note")
 
-        with gr.Tab("법령 요약", id="law", elem_id="tab-law"):
-            gr.Markdown(LABOR_LAW_MD, elem_id="labor-law")
-            gr.Markdown(SOURCE_NOTE, elem_classes="source-note")
-
-    # B가 이벤트를 걸 컴포넌트만 반환합니다. (docs/ui-layout-rules.md 4번 표)
     return {
         "chatbot": chatbot,
         "question": question,
