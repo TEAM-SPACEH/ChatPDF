@@ -10,11 +10,13 @@
   --lg-accent: #7a2e3a; /* 버건디 — 선택 탭·포커스 */
   --lg-honey: #f6e3b8; /* 판사봉 꿀색 — 추천 질문 hover */
   --lg-tab-idle: #8a817a; /* 고르지 않은 탭 글자 */
+  --lg-rule: var(--border-color-primary); /* 아래 #input-row처럼 테두리 변수를 덮어쓴 곳에서 쓰는 원래 테두리 색 */
 }
 .dark {
   --lg-accent: #e3a3ac; /* 로즈 */
   --lg-honey: rgba(246, 227, 184, 0.18);
   --lg-tab-idle: #7a7069;
+  --lg-rule: var(--border-color-primary);
 }
 
 /* 한 줄이 80자를 넘지 않도록 폭을 좁게. width를 고정해야 탭을 바꿀 때 폭이 들쭉날쭉하지 않습니다. */
@@ -74,66 +76,79 @@
   box-shadow: inset 0 -2px 0 var(--lg-accent);
 }
 
-/* ───────────── 캐릭터 + 말풍선 ───────────── */
-#judge-row {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 8px 0 0;
+/* ───────────── 질문하기 탭 — 메신저처럼 ───────────── */
+/* 채팅창 상자를 없애고 페이지 바탕 위에 말풍선만 흐르게 합니다.
+   Gradio Chatbot 안쪽은 elem_id를 붙일 수 없어서, #chatbot 안에서만 Gradio의 의미 있는 클래스
+   (.bubble-wrap, .bot, .bot-row, .user, .avatar-container)를 씁니다. 자동 생성 이름(.svelte-xxxx)은 여전히 금지.
+   requirements.txt에서 gradio 버전을 고정해 두었으니, 버전을 올릴 때 이 부분을 꼭 확인하세요. */
+#chatbot {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  line-height: 1.7;
+  /* 말풍선 모서리·그림자는 Gradio 변수로 */
+  --radius-md: 18px;
+  --shadow-drop: none;
 }
-/* 6컷 스프라이트(ui/assets/judge-sprite.webp, 컷당 144×192). 평소엔 1번 컷에 멈춤 */
-#judge {
-  flex: none;
-  width: 72px;
-  height: 96px;
-  background: url("/gradio_api/file=ui/assets/judge-sprite.webp") 0 0 / 600% 100% no-repeat;
+#chatbot .bubble-wrap {
+  background: transparent !important;
 }
-#judge-bubble {
-  position: relative;
-  margin: 0;
-  padding: 12px 16px;
-  background: var(--block-background-fill);
-  border: 1px solid var(--border-color-primary);
-  border-radius: 12px;
-  font-size: 0.95rem;
-  line-height: 1.5;
-  color: var(--body-text-color);
-}
-/* 말풍선 꼬리 — 캐릭터 쪽(왼쪽)을 향함. 바깥 삼각형이 테두리, 안쪽 삼각형이 면 */
-#judge-bubble::before,
-#judge-bubble::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  border-style: solid;
-  border-color: transparent;
-  transform: translateY(-50%);
-}
-#judge-bubble::before {
-  left: -9px;
-  border-width: 8px 9px 8px 0;
-  border-right-color: var(--border-color-primary);
-}
-#judge-bubble::after {
-  left: -7px;
-  border-width: 7px 8px 7px 0;
-  border-right-color: var(--block-background-fill);
-}
-.judge-say-busy {
-  display: none;
+/* Gradio 기본 휴지통 버튼은 숨김 — 대화 지우기는 아래 #clear-btn(B가 상태까지 초기화)으로 통일 */
+#chatbot button[aria-label="Clear"] {
+  display: none !important;
 }
 
-/* 채팅창에 로딩 표식(.judge-busy)이 있는 동안: 판사봉 두드리기 + 바쁜 문구.
-   표식은 ui/chat_actions.py의 LOADING_TEXT에 들어 있고, 답변이 오면 덮어써져 사라집니다. */
-/* steps(6, jump-none): 0%→100% 사이를 6칸으로 나눠 각 컷을 같은 시간씩 보여줌 */
-#tab-chat:has(.judge-busy) #judge {
+/* 판사 답변 — 흰 말풍선, 판사 쪽 아래 모서리만 뾰족하게 */
+#chatbot .bot {
+  background: var(--block-background-fill) !important;
+  border: 1px solid var(--border-color-primary) !important;
+  border-bottom-left-radius: 6px !important;
+  padding: 12px 18px !important;
+}
+/* 내 질문 — 버건디(다크 모드는 로즈) 말풍선 */
+#chatbot .user {
+  background: var(--button-primary-background-fill) !important;
+  border: none !important;
+  border-bottom-right-radius: 6px !important;
+  color: var(--button-primary-text-color) !important;
+  padding: 10px 16px !important;
+}
+#chatbot .user * {
+  color: inherit !important;
+}
+
+/* 판사 얼굴 아바타 — 테두리 대신 옅은 버건디 원 */
+#chatbot .avatar-container {
+  width: 40px !important;
+  height: 40px !important;
+  border: none !important;
+  background: var(--color-accent-soft);
+}
+#chatbot .avatar-container img {
+  padding: 0 !important;
+}
+
+/* 답변 준비 중 — B의 LOADING_TEXT 안 표식(.judge-busy)이 그 자리에서 전신 판사로 변해 판사봉을 두드립니다.
+   (6컷 스프라이트 ui/assets/judge-sprite.webp, 컷당 144×192) 답변이 오면 메시지가 덮어써져 자연스럽게 사라집니다. */
+#chatbot .bot:has(.judge-busy) {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  color: var(--body-text-color-subdued);
+}
+#chatbot .bot-row:has(.judge-busy) .avatar-container {
+  visibility: hidden; /* 전신 판사가 대신 나오므로 얼굴은 잠시 숨김 */
+}
+.judge-busy {
+  display: inline-block;
+  width: 54px;
+  height: 72px;
+  margin-right: 10px;
+  vertical-align: bottom;
+  background: url("/gradio_api/file=ui/assets/judge-sprite.webp") 0 0 / 600% 100% no-repeat;
+  /* steps(6, jump-none): 0%→100% 사이를 6칸으로 나눠 각 컷을 같은 시간씩 보여줌 */
   animation: judge-tap 0.8s steps(6, jump-none) infinite;
-}
-#tab-chat:has(.judge-busy) .judge-say-idle {
-  display: none;
-}
-#tab-chat:has(.judge-busy) .judge-say-busy {
-  display: inline;
 }
 @keyframes judge-tap {
   to {
@@ -141,19 +156,61 @@
   }
 }
 
-/* ───────────── 질문하기 탭 ───────────── */
-#chatbot {
+/* 대화가 비어 있을 때 — 판사가 가운데 서서 말풍선으로 인사 (placeholder) */
+.judge-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 14px;
+}
+.judge-hero-bubble {
+  position: relative;
+  margin: 0;
+  padding: 12px 20px;
   background: var(--block-background-fill);
   border: 1px solid var(--border-color-primary);
-  border-radius: 12px;
-  box-shadow: 0 1px 2px rgba(43, 37, 35, 0.04);
-  padding: 0 16px;
-  line-height: 1.7;
+  border-radius: 18px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--body-text-color);
 }
-#chatbot h3 {
-  font-size: 1.3rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+/* 말풍선 꼬리 — 아래(캐릭터 쪽)를 향함. 바깥 삼각형이 테두리, 안쪽 삼각형이 면 */
+.judge-hero-bubble::before,
+.judge-hero-bubble::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  border-style: solid;
+  border-color: transparent;
+  transform: translateX(-50%);
+}
+.judge-hero-bubble::before {
+  bottom: -9px;
+  border-width: 9px 8px 0;
+  border-top-color: var(--border-color-primary);
+}
+.judge-hero-bubble::after {
+  bottom: -7px;
+  border-width: 8px 7px 0;
+  border-top-color: var(--block-background-fill);
+}
+.judge-hero-figure {
+  width: 96px;
+  height: 128px;
+  background: url("/gradio_api/file=ui/assets/judge-sprite.webp") 0 0 / 600% 100% no-repeat;
+  animation: judge-float 3.2s ease-in-out infinite; /* 살짝 둥실둥실 */
+}
+@keyframes judge-float {
+  50% {
+    transform: translateY(-6px);
+  }
+}
+.judge-hero-guide {
+  margin: 4px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.7;
+  color: var(--body-text-color-subdued);
 }
 
 /* 추천 질문 — 테두리만 있는 알약. 마우스를 올리면 꿀색이 칠해집니다. */
@@ -178,21 +235,42 @@
   border-color: var(--lg-honey) !important;
 }
 
+/* 입력창 — 입력칸과 질문하기 버튼을 둥근 상자 하나로 묶은 메신저식 입력줄 */
 #input-row {
-  align-items: stretch;
-  gap: 8px;
+  /* Gradio가 입력칸을 감싼 상자에 테두리 색을 배경으로 칠하므로, 이 줄 안에서만 테두리 변수를 투명으로 */
+  --border-color-primary: transparent;
+  --block-border-color: transparent;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 6px;
+  background: var(--block-background-fill);
+  border: 1px solid var(--lg-rule);
+  border-radius: 18px;
+  transition: border-color 0.15s ease;
 }
-/* 입력창은 바깥 상자 없이 입력칸 하나만 보이게 */
+#input-row:focus-within {
+  border-color: var(--lg-accent);
+}
+/* 입력칸 자체의 테두리·배경은 지우고 바깥 상자가 대신 보이게 (Gradio 변수로) */
 #question {
+  --input-border-color: transparent;
+  --input-border-color-focus: transparent;
+  --input-background-fill: transparent;
+  --input-background-fill-focus: transparent;
+  --input-shadow: none;
+  --input-shadow-focus: none;
   background: transparent !important;
   border: none !important;
   padding: 0 !important;
 }
 #question textarea {
   font-size: 1rem;
-  padding: 14px 16px;
+  padding: 10px 12px;
 }
 #ask-btn {
+  align-self: stretch;
+  border-radius: 12px !important;
   font-weight: 600;
 }
 
@@ -260,8 +338,12 @@
   .example-btn {
     transition: none;
   }
-  #tab-chat:has(.judge-busy) #judge {
+  .judge-busy,
+  .judge-hero-figure {
     animation: none;
+  }
+  #input-row {
+    transition: none;
   }
 }
 
@@ -276,18 +358,15 @@
   #tabs button[role="tab"] {
     margin-right: 14px;
   }
-  #judge {
-    width: 54px;
-    height: 72px;
-  }
-  #judge-bubble {
-    font-size: 0.88rem;
-  }
   .example-btn {
     flex: 1 1 100% !important;
     text-align: left;
   }
+  /* 입력줄은 좁은 화면에서도 가로 한 줄 유지 (메신저처럼) */
   #input-row {
-    flex-direction: column;
+    flex-wrap: nowrap;
+  }
+  #ask-btn {
+    min-width: 72px !important;
   }
 }

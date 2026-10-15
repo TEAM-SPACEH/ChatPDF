@@ -51,7 +51,7 @@ UI A는 **화면에 보이는 것**을 만들고, UI B는 **그 화면이 어떻
 - `layout.py` 안에서 `gr.Blocks()`를 새로 열지 않습니다. 이미 `app.py`에서 열려 있습니다.
 - `rag/`나 `ui/events.py`, `ui/chat_actions.py`를 import하지 않습니다.
 - 이벤트(`.click` 등)를 걸지 않습니다. 버튼을 만들기만 하고 dict에 담아 넘깁니다.
-- 레이아웃용 컴포넌트(`gr.Row`, `gr.Tab`, 꾸밈용 `gr.Markdown`·`gr.HTML`)는 dict에 넣지 않습니다. **B가 이벤트를 걸어야 하는 컴포넌트만** 넣습니다.
+- 레이아웃용 컴포넌트(`gr.Row`, `gr.Tab`, 꾸밈용 `gr.Markdown`)는 dict에 넣지 않습니다. **B가 이벤트를 걸어야 하는 컴포넌트만** 넣습니다.
 
 ## 4. 컴포넌트 key 목록 (A↔B 약속)
 
@@ -69,12 +69,12 @@ UI A는 **화면에 보이는 것**을 만들고, UI B는 **그 화면이 어떻
 - `example_btns`는 버튼 **리스트**입니다. B는 버튼에 적힌 글자(`value`)를 질문으로 사용하므로, 버튼 글자 = 실제 질문 문장으로 씁니다.
 - 추천 질문 문장은 `ui/content.py`의 `EXAMPLE_QUESTIONS`에 둡니다. README의 대상 사용자 시나리오(알바·사회초년생·일용직)에 맞춰 고릅니다.
 - **출처(문서명·페이지)는 별도 컴포넌트를 만들지 않습니다.** RAG의 `answer()`가 답변 끝에 붙여서 `chatbot`에 표시됩니다.
-- 로딩 표시는 B가 채팅창에 넣는 문구(`LOADING_TEXT`)와 Gradio 기본 로딩을 사용합니다. A는 그 문구 안의 표식 `<span class="judge-busy">`을 CSS로 감지해 **캐릭터만** 움직입니다(7번).
+- 로딩 표시는 B가 채팅창에 넣는 문구(`LOADING_TEXT`)와 Gradio 기본 로딩을 사용합니다. A는 그 문구 안의 표식 `<span class="judge-busy">`을 CSS로 판사봉 두드리는 판사 애니메이션으로 그립니다(7번).
 
 ## 5. `gr.Chatbot` 규칙
 
 - 메시지 형식은 `{"role": "user" | "assistant", "content": "..."}` 딕셔너리 리스트입니다 (Gradio 6 기본 형식). A는 형식 관련 옵션을 바꾸지 않습니다.
-- 사용 방법 안내는 `placeholder`(`CHAT_PLACEHOLDER`)로 보여줍니다. **`value`에 초기 메시지를 넣지 않습니다.** B가 초기화할 때 빈 리스트로 되돌리기 때문입니다.
+- 사용 방법 안내는 `placeholder`로 보여줍니다. 판사 캐릭터 + 말풍선(`JUDGE_GREETING`) + 안내(`CHAT_PLACEHOLDER`)를 `ui/layout.py`의 `CHAT_EMPTY_HTML`로 조립합니다. **`value`에 초기 메시지를 넣지 않습니다.** B가 초기화할 때 빈 리스트로 되돌리기 때문입니다.
 - 높이, 아바타, 복사 버튼 같은 **보이는 옵션**은 A가 자유롭게 정합니다.
 
 ## 6. key를 바꾸거나 추가하고 싶을 때
@@ -88,7 +88,7 @@ UI A는 **화면에 보이는 것**을 만들고, UI B는 **그 화면이 어떻
 ## 7. 테마·CSS 규칙
 
 - 콘셉트는 **판사봉 캐릭터 톤**입니다. 가발 크림 배경(`#FAF8F5`), 법복 차콜 글자(`#2B2523`), 포인트는 버건디(`#7A2E3A`, 다크 모드는 로즈 `#E3A3AC`) 하나만 씁니다. 판사봉 꿀색(`#F6E3B8`)은 추천 질문 hover에만 씁니다. 색 근거는 `docs/ui-tone-redesign-spec.md`.
-- 질문하기 탭 맨 위에 캐릭터 + 말풍선(`#judge-row`, 꾸밈용 `gr.HTML`)이 항상 있습니다. 채팅창에 `.judge-busy` 표식이 있는 동안 CSS `:has()`로 스프라이트(`ui/assets/judge-sprite.webp`, 6컷)를 재생하고 말풍선 문구를 바꿉니다. 말풍선 문구는 `ui/content.py`의 `JUDGE_IDLE`, `JUDGE_BUSY`.
+- 질문하기 탭은 **메신저형**입니다. 채팅창 상자 없이 말풍선만 보이고, 판사 답변에는 얼굴 아바타(`ui/assets/judge-avatar.webp`)가 붙습니다. 답변 준비 중에는 로딩 메시지의 `.judge-busy` 표식이 전신 판사 스프라이트(`ui/assets/judge-sprite.webp`, 6컷)로 그려져 판사봉을 두드립니다. 자세한 내용은 `docs/ui-tone-redesign-spec.md` 8번.
 - 테마 변수에 다크 모드 값이 없는 색(포인트·꿀색·흐린 탭)은 `style.css`의 `--lg-*` 변수로 두고 `.dark`에서 다시 정합니다.
 - 글꼴: 모든 글자를 Pretendard 하나로 씁니다(jsDelivr에서 `@import`). 제목은 굵기(800)와 크기로 강조합니다.
 - 테마는 `ui/layout.py`의 `THEME`(Base 테마 + 위 색)이고, `app.py`의 `demo.launch(theme=THEME, css_paths=...)`로 적용됩니다. Gradio 6에서는 `gr.Blocks(theme=..., css=...)`를 쓰지 않습니다.
@@ -97,7 +97,8 @@ UI A는 **화면에 보이는 것**을 만들고, UI B는 **그 화면이 어떻
   - `elem_id`: dict key와 같은 이름을 하이픈으로 씁니다. 예: `chatbot` → `elem_id="chatbot"`, `ask_btn` → `elem_id="ask-btn"`
   - `elem_classes`: 여러 개에 같이 적용할 때 씁니다. 예: 추천 질문 버튼 → `elem_classes="example-btn"`
 - Gradio 내부 클래스(`.svelte-xxxx` 같은 자동 생성 이름)를 선택자로 쓰지 않습니다. 버전이 바뀌면 깨집니다.
-- 반응형 기준은 `768px`입니다. 그보다 좁으면 추천 질문·입력창·버튼이 세로 한 줄로 쌓입니다.
+  - **예외:** `elem_id`를 붙일 수 없는 Chatbot 안쪽만, `#chatbot` 아래에서 의미 있는 클래스(`.bot`, `.user`, `.bot-row`, `.avatar-container`, `.bubble-wrap`)를 씁니다. gradio 버전을 올릴 때 화면을 꼭 확인합니다.
+- 반응형 기준은 `768px`입니다. 그보다 좁으면 추천 질문이 세로 한 줄로 쌓입니다. 입력줄(입력칸 + 질문하기)은 메신저처럼 가로 한 줄을 유지합니다.
 - CSS는 앱을 띄울 때 한 번 읽습니다. `style.css`를 고친 뒤에는 앱을 다시 실행해야 반영됩니다.
 
 ## 8. PR 올리기 전 체크리스트

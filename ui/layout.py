@@ -2,6 +2,8 @@
 # 컴포넌트를 만들고 dict로 돌려줍니다. 이벤트 연결은 ui/events.py(UI B)에서 합니다.
 # 컴포넌트 이름(key)을 바꾸면 events.py도 함께 맞춰주세요.
 # 화면 문구는 ui/content.py, 색·간격은 ui/style.css에서 고칩니다.
+from pathlib import Path
+
 import gradio as gr
 
 from ui.content import (
@@ -9,8 +11,7 @@ from ui.content import (
     CHAT_PLACEHOLDER,
     EXAMPLE_QUESTIONS,
     FAQ_ITEMS,
-    JUDGE_BUSY,
-    JUDGE_IDLE,
+    JUDGE_GREETING,
     LABOR_LAW_MD,
     NOTICE,
     QUESTION_PLACEHOLDER,
@@ -97,15 +98,15 @@ THEME = gr.themes.Base(
     button_secondary_shadow="none",
 )
 
-# 질문하기 탭 맨 위 캐릭터 + 말풍선. 말풍선 문구 두 개를 다 넣어두고, CSS가
-# 채팅창의 로딩 표식(.judge-busy, ui/chat_actions.py의 LOADING_TEXT)을 보고 하나만 보여줍니다.
-JUDGE_HTML = f"""
-<div id="judge-row">
-  <div id="judge" role="img" aria-label="판사 캐릭터"></div>
-  <p id="judge-bubble" aria-live="polite">
-    <span class="judge-say-idle">{JUDGE_IDLE}</span>
-    <span class="judge-say-busy">{JUDGE_BUSY}</span>
-  </p>
+# 답변 옆에 붙는 판사 얼굴. 로딩 중 전신 애니메이션은 style.css의 .judge-busy가 맡습니다.
+JUDGE_AVATAR = Path(__file__).parent / "assets" / "judge-avatar.webp"
+
+# 대화가 비어 있을 때: 판사 캐릭터가 말풍선으로 인사하고 아래에 사용 안내
+CHAT_EMPTY_HTML = f"""
+<div class="judge-hero">
+  <p class="judge-hero-bubble">{JUDGE_GREETING}</p>
+  <div class="judge-hero-figure" role="img" aria-label="판사 캐릭터"></div>
+  <p class="judge-hero-guide">{"<br>".join(CHAT_PLACEHOLDER)}</p>
 </div>
 """
 
@@ -116,11 +117,13 @@ def build_layout():
 
     with gr.Tabs(elem_id="tabs"):
         with gr.Tab("질문하기", id="chat", elem_id="tab-chat"):
-            gr.HTML(JUDGE_HTML, padding=False)
             chatbot = gr.Chatbot(
                 show_label=False,
-                height=380,
-                placeholder=CHAT_PLACEHOLDER,
+                height="56vh",
+                min_height=380,
+                placeholder=CHAT_EMPTY_HTML,
+                avatar_images=(None, JUDGE_AVATAR),
+                buttons=["copy"],
                 elem_id="chatbot",
             )
             with gr.Row(elem_id="example-row"):
