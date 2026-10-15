@@ -13,6 +13,8 @@
 import argparse
 import csv
 import logging
+import os
+import re
 import sys
 import time
 from datetime import datetime
@@ -28,7 +30,9 @@ TYPES = ["단순 사실", "비교·종합", "표현 변형", "문서에 없음"]
 UNKNOWN_TYPE = "문서에 없음"
 
 # answer()가 근거를 찾지 못했을 때 쓰는 문구 (rag/answer_chain.py, rag/prompts.py)
-UNKNOWN_PHRASES = ["확인되지 않습니다", "확인하지 못했습니다", "찾지 못했습니다"]
+UNKNOWN_PHRASES = ["확인되지 않습니다", "확인하지 못했습니다", "찾지 못했습니다",
+                   # 개선 전 코드(rlm/rag-prompt)가 거절할 때 쓰는 표현도 같은 기준으로 인정합니다.
+                   "포함되어 있지 않", "알 수 없습니다", "모르겠습니다", "정보가 없습니다"]
 
 # answer()가 마지막에 붙이는 출처 목록의 제목 (rag/answer_chain.py)
 SOURCES_HEADINGS = ["**선별된 참고 조항**", "**검색된 참고 문서**"]
@@ -39,8 +43,8 @@ TARGETS = {"정답률": 0.80, "근거 일치율": 0.90, "모름 처리율": 1.00
 GRADE_SCORES = {"✅": 1.0, "△": 0.5, "❌": 0.0}
 
 RESULT_COLUMNS = [
-    "No", "유형", "질문", "정답 요약", "근거 조문", "답변", "인용 조문", "검색 질문",
-    "근거 일치", "모름 처리", "첫 글자(초)", "전체(초)", "오류", "정답 채점", "비고",
+    "No", "유형", "질문", "정답 요약", "근거 조문", "근거 페이지", "답변", "인용 조문", "검색 질문",
+    "근거 일치", "모름 처리", "근거 문서 페이지", "근거 페이지 적중", "첫 글자(초)", "전체(초)", "오류", "정답 채점", "비고",
 ]
 
 
@@ -96,6 +100,57 @@ def parse_cited(text):
     return cited
 
 
+PAGE_RE = re.compile(r"p\.(\d+)(?:~(\d+))?")
+
+
+def _page_range(text):
+    m = PAGE_RE.search(text or "")
+    if not m:
+        return []
+    first, last = int(m.group(1)), int(m.group(2) or m.group(1))
+    return list(range(first, last + 1))
+
+
+def parse_pages(cell):
+    """'근로기준법 p.3; 근로기준법 시행령 p.10' → [('근로기준법', 3), ('근로기준법 시행령', 10)] (순서 유지)."""
+    pages = []
+    for part in (cell or "").split(";"):
+        law, _, page = part.strip().rpartition(" ")
+        pages += [(law, n) for n in _page_range(page)] if law else []
+    return pages
+
+
+def cited_pages(text):
+    """답변 출처 목록의 '- 법령 · 조문 · 파일 · p.2~3' 줄에서 (법령, 페이지)를 뽑습니다."""
+    _, sources = split_answer(text)
+    pages = set()
+    for line in sources.splitlines():
+        parts = [p.strip() for p in line.strip()[2:].split(" · ")] if line.strip().startswith("- ") else []
+        if len(parts) >= 2:
+            pages.update((parts[0], n) for n in _page_range(parts[-1]))
+    return pages
+
+
+def doc_pages(docs):
+    """검색 문서(Document)에서 (법령, 페이지)를 뽑습니다. 법령명은 PDF 파일명 앞부분입니다."""
+    pages = set()
+    for doc in docs:
+        meta = doc.metadata
+        law = meta.get("law_name") or Path(str(meta.get("source", ""))).name.split("(", 1)[0].strip()
+        if isinstance(meta.get("page"), int):
+            last = meta.get("page_end", meta["page"])
+            pages.update((law, n + 1) for n in range(meta["page"], last + 1))
+    return pages
+
+
+def page_hit(row, evidence_pages):
+    """LLM에 넘긴 근거 안에 정답 근거 페이지(근거 페이지 칸의 첫 번째)가 있었는지. 문서에 없음 질문은 '-'."""
+    if row["유형"] == UNKNOWN_TYPE:
+        return "-"
+    expected = parse_pages(row.get("근거 페이지", ""))
+    return "O" if expected and expected[0] in evidence_pages else "X"
+
+
 def is_unknown_answer(text):
     body, _ = split_answer(text)
     return any(phrase in body for phrase in UNKNOWN_PHRASES)
@@ -130,6 +185,7 @@ def summarize(rows):
     graded = [GRADE_SCORES[r["정답 채점"].strip()] for r in rows
               if r.get("정답 채점", "").strip() in GRADE_SCORES]
     match_rate, match_n = _ratio([r["근거 일치"] for r in rows if r["유형"] != UNKNOWN_TYPE], "O")
+    page_rate, page_n = _ratio([r.get("근거 페이지 적중", "") for r in rows if r["유형"] != UNKNOWN_TYPE], "O")
     unknown_rate, unknown_n = _ratio([r["모름 처리"] for r in rows if r["유형"] == UNKNOWN_TYPE], "O")
     over_refusals = sum(r["모름 처리"] == "X" for r in rows if r["유형"] != UNKNOWN_TYPE)
     times = [float(r["전체(초)"]) for r in rows if r.get("전체(초)") and not r.get("오류")]
@@ -147,6 +203,7 @@ def summarize(rows):
         "정답률": (sum(graded) / len(graded) if graded else None, len(graded)),
         "유형별 점수": by_type,
         "근거 일치율": (match_rate, match_n),
+        "근거 페이지 적중률": (page_rate, page_n),
         "모름 처리율": (unknown_rate, unknown_n),
         "지나친 거절": over_refusals,
         "평균 응답 시간": sum(times) / len(times) if times else None,
@@ -192,6 +249,7 @@ def summary_markdown(stats, label, rows=()):
         "| --- | --- | --- | --- | --- |",
         f"| 정답률 | {_pct(acc)} | ≥ 80% | {verdict(acc, TARGETS['정답률'])} | 사람이 채점한 {acc_n}개 (✅=1, △=0.5, ❌=0) |",
         f"| 근거 일치율 | {_pct(match)} | ≥ 90% | {verdict(match, TARGETS['근거 일치율'])} | 답이 있는 질문 {match_n}개 중 핵심 조문을 인용한 비율 |",
+        f"| 근거 페이지 적중률 (참고) | {_pct(stats['근거 페이지 적중률'][0])} | - | - | LLM에 넘긴 근거 안에 정답 근거 페이지가 있었던 비율 ({stats['근거 페이지 적중률'][1]}개) |",
         f"| 모름 처리율 | {_pct(unknown)} | 100% | {verdict(unknown, TARGETS['모름 처리율'])} | 문서에 없는 질문 {unknown_n}개 중 '확인되지 않는다'고 답한 비율 |",
         f"| 응답 시간 | 평균 {_sec(avg)} / 최대 {_sec(stats['최대 응답 시간'])} | ≤ 10초 | {verdict(avg, TARGETS['응답 시간(초)'], lower_is_better=True)} | 10초 이내 {_pct(stats['10초 이내 비율'])}, 첫 글자까지 평균 {_sec(stats['평균 첫 글자 시간'])} |",
         "",
@@ -307,10 +365,17 @@ def dry_run(questions):
     return 0
 
 
-def run(questions, label):
+def run(questions, label, system="current", db_dir=None):
+    """system='current'는 지금 코드(rag/answer_chain.py), 'baseline'은 첫 커밋 방식(eval/baseline_system.py)."""
     sys.path.insert(0, str(ROOT))
+    if db_dir:
+        os.environ["CHROMA_DB_DIR"] = str(Path(db_dir).resolve())  # ui.chat_actions가 import될 때 읽습니다.
     import ui.chat_actions as app_actions  # 앱과 같은 DB·키 설정을 씁니다.
-    from rag.answer_chain import answer
+    if system == "baseline":
+        import baseline_system
+        answer = baseline_system.answer
+    else:
+        from rag.answer_chain import answer
 
     db = app_actions.prepare_db()
     if db is None:
@@ -335,13 +400,17 @@ def run(questions, label):
         total = time.perf_counter() - start
 
         match, unknown, cited = judge(q, text) if not error else ("X", "X", "")
+        evidence = doc_pages(baseline_system.last_context_docs) if system == "baseline" else cited_pages(text)
         rows.append({
             "No": q["No"], "유형": q["유형"], "질문": q["질문"], "정답 요약": q["정답 요약"],
             "근거 조문": q["근거 조문"], "답변": text, "인용 조문": cited,
             "검색 질문": " | ".join(capture.queries),
             "근거 일치": match, "모름 처리": unknown,
+            "근거 문서 페이지": "; ".join(f"{law} p.{n}" for law, n in sorted(evidence)),
+            "근거 페이지 적중": page_hit(q, evidence) if not error else "X",
             "첫 글자(초)": f"{first_at:.2f}" if first_at is not None else "",
             "전체(초)": f"{total:.2f}", "오류": error, "정답 채점": "", "비고": q.get("비고", ""),
+            "근거 페이지": q.get("근거 페이지", ""),
         })
         print(f"    {total:.1f}초 · 근거 일치 {match} · 모름 처리 {unknown}" + (f" · 오류 {error}" if error else ""))
 
@@ -375,6 +444,9 @@ def main(argv=None):
     parser.add_argument("--only", help="실행할 질문 번호 (예: 1,7,27)")
     parser.add_argument("--questions", default=str(QUESTIONS_PATH), help="질문셋 CSV 경로")
     parser.add_argument("--summarize", metavar="RESULTS_CSV", help="채점한 결과 CSV로 지표만 다시 계산")
+    parser.add_argument("--system", choices=["current", "baseline"], default="current",
+                        help="current: 지금 코드 / baseline: 첫 커밋 방식(개선 전 측정용)")
+    parser.add_argument("--db-dir", help="벡터DB 폴더 (기본: chroma_db, 개선 전 측정은 chroma_db_backup_v1)")
     args = parser.parse_args(argv)
 
     if args.summarize:
@@ -388,7 +460,7 @@ def main(argv=None):
 
     if args.dry_run:
         return dry_run(questions)
-    run(questions, args.label)
+    run(questions, args.label, system=args.system, db_dir=args.db_dir)
     return 0
 
 

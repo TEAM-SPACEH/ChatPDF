@@ -115,6 +115,30 @@ class SummaryTest(unittest.TestCase):
         self.assertIn("--summarize", text)
 
 
+class PageHitTest(unittest.TestCase):
+    def test_parse_pages_with_ranges(self):
+        self.assertEqual(
+            run_eval.parse_pages("근로기준법 p.12; 근로기준법 시행령 p.10~11"),
+            [("근로기준법", 12), ("근로기준법 시행령", 10), ("근로기준법 시행령", 11)],
+        )
+
+    def test_cited_pages_from_real_source_formatter(self):
+        d = Document(page_content="", metadata={"law_name": "근로기준법", "article_no": "제17조", "source": "x.pdf", "page": 1, "page_end": 2})
+        text = make_answer("답", [d])
+        self.assertEqual(run_eval.cited_pages(text), {("근로기준법", 2), ("근로기준법", 3)})
+
+    def test_doc_pages_uses_file_name_when_no_law_name(self):
+        # 개선 전 DB 조각에는 law_name이 없어서 파일명 앞부분을 법령명으로 씁니다.
+        d = Document(page_content="", metadata={"source": "/x/근로기준법(법률)(제21533호)(20261008).pdf", "page": 3})
+        self.assertEqual(run_eval.doc_pages([d]), {("근로기준법", 4)})
+
+    def test_page_hit_uses_core_page(self):
+        row = {"유형": "단순 사실", "근거 페이지": "근로기준법 p.4; 근로기준법 p.9"}
+        self.assertEqual(run_eval.page_hit(row, {("근로기준법", 4)}), "O")
+        self.assertEqual(run_eval.page_hit(row, {("근로기준법", 9)}), "X")
+        self.assertEqual(run_eval.page_hit({"유형": "문서에 없음", "근거 페이지": ""}, set()), "-")
+
+
 class QueryCaptureTest(unittest.TestCase):
     def test_captures_generated_queries_log(self):
         import logging
