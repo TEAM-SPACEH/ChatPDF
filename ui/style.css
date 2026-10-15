@@ -348,13 +348,15 @@ html[data-font-size="xxl"] {
 }
 
 /* 펼쳐지는 언어 목록 — 지구본 아래 오른쪽에 떠 있는 메뉴처럼 */
+/* Gradio 6의 gr.Radio는 fieldset이 아니라 .wrap(옵션 컨테이너) + label(각 옵션, 선택 시 .selected) 구조입니다. */
 #language {
   position: absolute;
   top: 100%;
   right: 0;
   z-index: 20;
-  width: auto !important;
-  min-width: 140px;
+  width: max-content !important;
+  min-width: 150px;
+  max-width: 220px;
   margin-top: 6px;
   padding: 6px !important;
   background: var(--block-background-fill) !important;
@@ -362,25 +364,32 @@ html[data-font-size="xxl"] {
   border-radius: 12px !important;
   box-shadow: 0 8px 24px rgba(27, 42, 65, 0.12);
 }
-#language fieldset {
+/* 옵션들을 세로로 쌓습니다 (기본값은 flex-wrap: wrap 가로 배치라 덮어씁니다). */
+#language .wrap {
   flex-direction: column !important;
+  flex-wrap: nowrap !important;
+  align-items: stretch !important;
   gap: 2px !important;
 }
-#language label {
-  font-size: 0.9rem !important;
+/* 각 언어 옵션(label) */
+#language .wrap label {
+  width: 100%;
   border: none !important;
   border-radius: 8px !important;
   padding: 8px 12px !important;
+  font-size: 0.9rem !important;
+  box-shadow: none !important;
+  background: transparent !important;
   transition: background-color 0.15s ease;
 }
-#language label:hover {
+#language .wrap label:hover {
   background: var(--color-accent-soft) !important;
 }
-#language input:checked + span,
-#language label:has(input:checked) {
+/* 선택된 언어 — 형광펜 하이라이트 */
+#language .wrap label.selected {
   background: var(--lg-mark) !important;
 }
-#language label:focus-within {
+#language .wrap label:focus-within {
   outline: 2px solid var(--color-accent);
   outline-offset: -2px;
 }
@@ -451,7 +460,7 @@ html[data-font-size="xxl"] {
   .example-btn,
   .font-size-chevron,
   #tabs button[role="tab"],
-  #language label {
+  #language .wrap label {
     transition: none;
   }
 }

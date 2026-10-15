@@ -126,6 +126,7 @@ I18N = {
         "notice": (
             "法律相談ではなく情報提供のためのサービスです。"
             "正確な判断は雇用労働部の顧客相談センター **1350** にお問い合わせください。"
+            "\n\n*この回答はAIによる翻訳です。正確な内容は韓国語の原文を基準としてください。*"
         ),
         "chat_placeholder": (
             "### どんなことが心配ですか？\n"
@@ -213,6 +214,7 @@ I18N = {
             "This service provides information, not legal advice. "
             "For an accurate assessment, contact the Ministry of Employment and Labor "
             "counseling center at **1350**."
+            "\n\n*This answer is AI-translated; the Korean original is the authoritative version.*"
         ),
         "chat_placeholder": (
             "### What are you worried about?\n"
@@ -309,6 +311,7 @@ You cannot be dismissed **without just cause**, and dismissal requires
         "notice": (
             "本服务仅提供信息，不构成法律咨询。"
             "如需准确判断，请拨打雇佣劳动部客户咨询中心 **1350**。"
+            "\n\n*本回答为AI翻译，准确内容以韩语原文为准。*"
         ),
         "chat_placeholder": (
             "### 您在担心哪方面？\n"
@@ -392,6 +395,7 @@ You cannot be dismissed **without just cause**, and dismissal requires
             "Đây là dịch vụ cung cấp thông tin, không phải tư vấn pháp lý. "
             "Để được đánh giá chính xác, hãy liên hệ Trung tâm tư vấn khách hàng của "
             "Bộ Lao động và Việc làm theo số **1350**."
+            "\n\n*Câu trả lời này do AI dịch; nội dung chính xác lấy theo bản gốc tiếng Hàn.*"
         ),
         "chat_placeholder": (
             "### Bạn đang lo lắng về điều gì?\n"
