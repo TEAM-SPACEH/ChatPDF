@@ -25,6 +25,7 @@ from ui.content import (
     localize,
 )
 from ui.font_size import build_font_size_control
+from ui.wage_tab import build_wage_tab
 
 # 테마 — "판사봉 캐릭터" 톤: 가발 크림 배경, 법복 차콜 글자, 버건디 포인트 하나.
 # 색 근거는 docs/ui-tone-redesign-spec.md. Gradio 6에서는 app.py의 demo.launch(theme=...)로 적용합니다.
@@ -218,9 +219,10 @@ def build_layout():
         villain_bar = _screen_bar("villain")
         villain_soon = gr.HTML(coming_soon_html(_KO), padding=False)
 
+    # ───────── 최저임금 계산기 (화면·이벤트는 ui/wage_tab.py) ─────────
     with gr.Column(visible=False, elem_id="screen-calc") as calc_screen:
         calc_bar = _screen_bar("calc")
-        calc_soon = gr.HTML(coming_soon_html(_KO), padding=False)
+        build_wage_tab()
 
     bars = {"chat": chat_bar, "villain": villain_bar, "calc": calc_bar}
     i18n = chat.pop("i18n")
@@ -245,7 +247,7 @@ def build_layout():
             # 화면 key → 그 화면 위쪽 바의 이름(Markdown)
             "screen_titles": {key: bar[1] for key, bar in bars.items()},
             "notices": [home_notice, *(bar[2] for bar in bars.values())],
-            "coming_soons": [villain_soon, calc_soon],
+            "coming_soons": [villain_soon],
         },
     }
 
