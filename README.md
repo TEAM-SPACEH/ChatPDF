@@ -1,9 +1,6 @@
 <div align="center">
 
-#
-
-  <img src="docs/images/서명잠깐만로고.webp" width="480" />
-</div>
+# <img src="docs/images/서명잠깐만로고.webp" width="480" />
 
 ### 서명하기 전, 근로자의 권리를 확인하는 가장 쉬운 방법
 
