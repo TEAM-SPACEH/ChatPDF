@@ -1,5 +1,13 @@
 /* 임금체불 사업주 조회 화면 (ui/arrears_tab.py) — 이 화면에서만 쓰는 스타일.
-   기존 ui/style.css는 건드리지 않고, 색은 테마 변수(var(--...))를 그대로 씁니다. */
+   기존 ui/style.css는 건드리지 않고, 색은 테마 변수(var(--...))를 그대로 씁니다.
+   결과 카드 구성: 가상 데이터 배너 → 입력한 번호 → 섹션(h4)마다 위쪽 구분선 → 아래 배너 */
+
+/* gr.HTML은 padding=False여도 안쪽 상자(.html-container)에 10·12px 여백이 남아
+   배너·결과 카드만 다른 요소보다 안쪽으로 들어가 보이므로 지움 */
+#screen-villain .html-container {
+  padding: 0 !important;
+}
+
 .arrears-mock-banner {
   margin: 0 0 12px;
   padding: 12px 14px;
@@ -7,6 +15,7 @@
   border: 1px solid var(--border-color-accent-subdued);
   background: var(--color-accent-soft);
   color: var(--body-text-color);
+  font-size: 0.92rem;
   font-weight: 600;
   line-height: 1.6;
 }
@@ -19,56 +28,135 @@
   font-size: 0.9rem;
   color: var(--body-text-color-subdued);
 }
+
+/* ───────── 결과 카드 ───────── */
 .arrears-result {
   margin-top: 8px;
   padding: 20px;
   border: 1px solid var(--border-color-primary);
-  border-radius: 12px;
+  border-radius: 16px;
   background: var(--background-fill-primary);
-  line-height: 1.7;
+  font-size: 0.98rem;
+  line-height: 1.65;
 }
+.arrears-result p {
+  margin: 0 0 8px;
+}
+/* 섹션 제목 — 위쪽 가는 선으로 구역을 나눠 긴 결과도 훑어보기 쉽게 */
 .arrears-result h4 {
-  margin: 20px 0 6px;
-  font-size: 1.02rem;
-}
-.arrears-result ul {
-  margin: 0;
-  padding-left: 1.2em;
+  margin: 18px 0 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-color-primary);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 .arrears-result a {
+  padding: 0 !important; /* Gradio가 링크에 넣는 좌우 8px 여백 때문에 "누리집 에서"처럼 띄어 보임 */
   color: var(--lg-accent);
+  font-weight: 600;
+  text-underline-offset: 3px;
 }
+.arrears-result strong {
+  color: var(--body-text-color);
+}
+
+/* 목록 — 속 빈 동그라미 대신 작은 버건디 점 */
+.arrears-result ul {
+  margin: 0;
+  padding: 0;
+  list-style: none !important;
+}
+.arrears-result li {
+  position: relative;
+  margin: 0 0 6px;
+  padding-left: 16px;
+}
+.arrears-result li::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 0.68em;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--lg-accent);
+}
+.arrears-result li:last-child {
+  margin-bottom: 0;
+}
+
+/* 맨 아래 배너 — 위와 같은 안내라 한 단계 작게 */
 .arrears-result > .arrears-mock-banner:last-child {
   margin: 20px 0 0;
+  font-size: 0.85rem;
 }
+
+/* 입력한 사업자등록번호 — 옅은 바탕의 한 줄 */
 .arrears-query {
-  display: grid;
-  grid-template-columns: auto 1fr;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
   gap: 4px 16px;
   margin: 0;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--body-background-fill);
 }
 .arrears-query dt {
+  font-size: 0.9rem;
   color: var(--body-text-color-subdued);
 }
 .arrears-query dd {
   margin: 0;
-  font-weight: 600;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
 }
+
+/* 조회 상태 배지 */
 .arrears-status {
   display: inline-block;
-  padding: 2px 12px;
+  padding: 3px 12px;
   border-radius: 999px;
   border: 1px solid var(--border-color-primary);
+  background: var(--body-background-fill);
+  font-size: 0.92rem;
   font-weight: 700;
 }
 .arrears-listed .arrears-status {
-  border-color: var(--lg-accent);
+  border-color: transparent;
+  background: var(--color-accent-soft);
   color: var(--lg-accent);
 }
+
+/* 가상 명단 기록 — 점 목록 대신 기록마다 옅은 버건디 카드 */
 .arrears-records li {
-  margin-bottom: 6px;
+  margin-bottom: 8px;
+  padding: 10px 14px;
+  border-left: 3px solid var(--lg-accent);
+  border-radius: 8px;
+  background: var(--color-accent-soft);
+  font-size: 0.94rem;
 }
+.arrears-records li::before {
+  content: none;
+}
+
 .arrears-empty {
   margin: 8px 0 0;
   color: var(--body-text-color-subdued);
+}
+
+/* 휴대폰 — 카드 안쪽 여백과 글자를 조금 줄임 */
+@media (max-width: 768px) {
+  .arrears-result {
+    padding: 16px;
+    font-size: 0.94rem;
+  }
+  .arrears-result h4 {
+    margin-top: 14px;
+    padding-top: 14px;
+  }
 }

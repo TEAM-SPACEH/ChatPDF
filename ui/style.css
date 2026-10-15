@@ -746,52 +746,319 @@ html[data-font-size="xxl"] {
   }
 }
 
-/* 반응형: 좁은 화면(768px 이하)에서는 세로로 한 줄씩 쌓기 */
+/* 휴대폰(768px 이하) — 바깥 틀과 푸터.
+   Gradio는 이 파일의 선택자 앞에 ".contain"을 붙이는데, .gradio-container로 시작하는 맨 바깥 규칙만 예외입니다.
+   그래서 이 둘은 아래 @media 블록에 넣지 않고 규칙 안에 @media를 둡니다. */
+.gradio-container {
+  @media (max-width: 768px) {
+    /* 휴대폰 하단 툴바·홈 인디케이터에 마지막 요소가 가리지 않게 */
+    padding-bottom: calc(16px + env(safe-area-inset-bottom)) !important;
+    --layout-gap: 12px; /* Gradio 블록 사이 기본 간격(24px)이 휴대폰에선 너무 넓음 */
+    /* Gradio 기본값 overflow: hidden은 아래 #input-row의 position: sticky를 막습니다.
+       clip은 넘치는 부분을 똑같이 잘라내면서 sticky는 살려둡니다. */
+    overflow: clip !important;
+  }
+}
+/* 좌우 여백 — Gradio 기본값 32px은 휴대폰 폭의 1/6을 차지하므로 16px로 */
+.gradio-container .main {
+  @media (max-width: 768px) {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+}
+/* Gradio 기본 푸터(Built with Gradio 등)는 휴대폰에서 자리만 차지하므로 숨김 */
+.gradio-container footer {
+  @media (max-width: 768px) {
+    display: none !important;
+  }
+}
+
+/* 반응형: 좁은 화면(768px 이하, 휴대폰) — 데스크톱 값은 그대로 두고 여기서만 덮어씁니다.
+   목표: 챗봇 화면이 스크롤 없이 한 화면에 들어오고, 질문 입력줄이 항상 보이게. (이슈 #37) */
 @media (max-width: 768px) {
-  .gradio-container {
-    padding-top: 0 !important;
+  /* 맨 위 언어·글자 크기 버튼을 조금 작게 */
+  #lang-btn,
+  .font-size-toggle {
+    padding: 5px 11px !important;
+    font-size: 0.84rem !important;
   }
+
+  /* 홈 — 로고를 줄이고 간격을 좁혀 메뉴가 첫 화면에 들어오게 */
   #screen-home {
-    padding-top: 8px;
+    padding-top: 0;
+    gap: 20px;
   }
+  .home-logo {
+    width: 78%;
+    margin: 0 auto;
+  }
+  .home-hero p {
+    font-size: 0.98rem;
+  }
+  .menu-btn {
+    min-height: 60px;
+    padding: 0 20px !important;
+    font-size: 1.08rem !important;
+  }
+
+  /* 각 화면 위쪽 바와 면책 고지 */
+  .screen-bar {
+    min-height: 40px;
+    margin-bottom: 0;
+  }
+  .screen-title h2 {
+    font-size: 1.12rem;
+  }
+  .notice {
+    margin: 0 !important;
+    padding: 8px 12px !important;
+    font-size: 0.8rem;
+  }
+
+  /* 준비 중 화면 — 빈 공간 줄이고 말풍선 줄바꿈을 고르게 */
+  .coming-soon {
+    padding: 32px 0;
+  }
+  .judge-hero-bubble {
+    max-width: 92%;
+    padding: 7px 14px;
+    border-radius: 14px;
+    font-size: 0.95rem;
+    line-height: 1.4;
+    text-wrap: balance;
+  }
+
   #tabs button[role="tab"] {
     margin-right: 14px;
+    padding: 6px 2px !important;
+  }
+
+  /* 채팅창 — 화면 높이에서 위쪽 바·탭·추천 질문·입력줄 높이를 뺀 만큼만 차지 (Gradio가 넣는 height를 덮어씀) */
+  #chatbot {
+    height: calc(100dvh - 400px) !important;
+    min-height: 220px !important;
+  }
+  /* 대화 말풍선 — 안쪽 여백과 줄 간격을 줄여 한 화면에 더 많이 보이게 */
+  #chatbot {
+    line-height: 1.55;
+    --radius-md: 14px;
+  }
+  #chatbot .bot {
+    padding: 8px 12px !important;
+  }
+  #chatbot .user {
+    padding: 7px 12px !important;
+  }
+  #chatbot .avatar-container {
+    width: 32px !important;
+    height: 32px !important;
+  }
+  /* 말풍선 줄 좌우 여백(기본 20px)을 없애 폭을 넓게 */
+  #chatbot .message-row {
+    margin: 8px 0 4px !important;
+  }
+
+  /* 답변 준비 중 — 숨긴 얼굴 아바타가 왼쪽에 48px 빈자리를 남기므로 아예 빼서
+     전신 판사가 말풍선들과 같은 왼쪽 선에서 시작하게 */
+  #chatbot .bot-row:has(.judge-busy) .avatar-container {
+    display: none !important;
+  }
+  /* 준비 중 문구 아래 복사 버튼은 복사할 게 없어서 숨김 */
+  #chatbot .bot-row:has(.judge-busy) + .message-buttons {
+    display: none !important;
+  }
+  .judge-busy {
+    --w: 52px;
+    margin-right: 6px;
+  }
+  /* 처리 중에 Gradio가 입력칸에 그리는 테두리(.generating)는 바깥 #input-row 테두리와 겹쳐 이중선이 됨 */
+  #question .wrap.generating {
+    border: none !important;
+  }
+
+  /* 빈 채팅 안내 — 캐릭터와 글을 작게 */
+  .judge-hero {
+    gap: 10px;
+  }
+  .judge-hero-figure {
+    --w: 76px;
+  }
+  .judge-hero-guide {
+    margin: 0;
+    font-size: 0.8rem;
+    line-height: 1.55;
+  }
+
+  /* 추천 질문 — 세로로 쌓지 않고 가로로 밀어 넘기는 한 줄 */
+  #example-row {
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    margin-top: 0;
+    scrollbar-width: none;
+  }
+  #example-row::-webkit-scrollbar {
+    display: none;
   }
   .example-btn {
-    flex: 1 1 100% !important;
-    text-align: left;
+    flex: 0 0 auto !important;
+    white-space: nowrap;
   }
-  /* 입력줄은 좁은 화면에서도 가로 한 줄 유지 (메신저처럼) */
+
+  /* 입력줄은 좁은 화면에서도 가로 한 줄 유지 (메신저처럼), 스크롤해도 화면 아래에 붙어 있게 */
   #input-row {
     flex-wrap: nowrap;
+    position: sticky;
+    bottom: calc(8px + env(safe-area-inset-bottom));
+    z-index: 5;
+    margin-top: 0;
+    padding: 4px;
+  }
+  #question textarea {
+    padding: 8px 10px;
+  }
+  /* 긴 안내 문구는 한 줄로 자르고 … 표시 */
+  #question textarea::placeholder {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   #ask-btn {
-    min-width: 72px !important;
+    flex: 0 0 auto !important;
+    min-width: 0 !important;
+    padding: 0 16px !important;
+    white-space: nowrap; /* "질문하기"가 두 줄로 나뉘지 않게 */
+  }
+  #clear-btn {
+    margin-top: -4px;
   }
 }
 
 /* ───────────── 최저임금 계산기 — 결과 모달 (ui/wage_tab.py) ───────────── */
+/* 구성: 제목(#wage-modal-title) / 결과(#wage-result, 길면 이 부분만 스크롤) / 닫기(#wage-close, 항상 아래 고정).
+   결과 문구는 wage/calc.py의 format_result()가 만든 목록이고, 순서는 ①최저시급 ②환산 시급 ③판단 ④참고… ⑤관련 조문입니다.
+   ③판단 줄은 강조 카드로 보여주고, 최저임금 미달(문구에 굵은 글씨가 있음)이면 버건디로 칠합니다. */
 #wage-modal {
   position: fixed;
   inset: 0;
   z-index: 1000;
-  background: rgba(0, 0, 0, 0.45);
+  background: rgba(28, 24, 23, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 16px;
 }
 #wage-modal-box {
-  background: var(--background-fill-primary);
-  border-radius: 12px;
-  padding: 24px;
+  flex: 0 1 auto !important; /* Gradio 열(Column)이 세로로 늘어나 빈 공간이 생기지 않게 */
+  display: flex;
+  flex-direction: column;
+  gap: 0 !important;
   width: 100%;
-  max-width: 560px;
-  max-height: 85vh;
-  overflow-y: auto;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  max-width: 520px;
+  max-height: min(85vh, 85dvh);
+  padding: 0;
+  overflow: hidden;
+  background: var(--background-fill-primary);
+  border-radius: 18px;
+  box-shadow: 0 12px 40px rgba(28, 24, 23, 0.28);
 }
-#wage-modal-box .prose {
-  font-size: 1.05rem;
-  line-height: 1.7;
+
+/* 제목 — 위쪽 띠, 아래 가는 선으로 결과와 구분 */
+#wage-modal-title {
+  flex: 0 0 auto;
+  padding: 18px 22px 14px !important;
+  border: none !important; /* Gradio 블록 테두리·둥근 모서리는 지우고 아래 선만 */
+  border-bottom: 1px solid var(--border-color-primary) !important;
+  border-radius: 0 !important;
+}
+#wage-modal-title h3 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+/* 결과 — 남는 높이를 차지하고 넘치면 여기만 스크롤 */
+#wage-result {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto !important;
+  padding: 14px 22px 4px !important;
+}
+#wage-result .prose {
+  font-size: 0.98rem;
+  line-height: 1.6;
+}
+/* 목록 — 동그라미 글머리표를 없애고 줄마다 가는 구분선 */
+#wage-result ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+#wage-result li {
+  margin: 0;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border-color-primary);
+}
+#wage-result li::marker,
+#wage-result li::before {
+  content: none;
+}
+#wage-result li:last-child {
+  border-bottom: none;
+}
+/* ③판단 — 강조 카드 (최저임금 이상: 차분한 바탕) */
+#wage-result li:nth-child(3) {
+  margin: 6px 0;
+  padding: 12px 14px;
+  border: 1px solid var(--border-color-primary);
+  border-radius: 12px;
+  background: var(--body-background-fill);
+  font-weight: 600;
+}
+/* ③판단 — 최저임금 미달 가능성(굵은 글씨가 들어감): 버건디 카드 */
+#wage-result li:nth-child(3):has(strong) {
+  border-color: transparent;
+  background: var(--color-accent-soft);
+  color: var(--lg-accent);
+}
+#wage-result li:nth-child(3) strong {
+  color: inherit;
+}
+/* 참고 줄은 한 단계 흐리게 */
+#wage-result li:nth-child(n + 4) {
+  font-size: 0.9rem;
+  color: var(--body-text-color-subdued);
+}
+/* ※ 면책 문구와 최저임금위원회 링크 */
+#wage-result p {
+  margin: 12px 0 0;
+  font-size: 0.85rem;
+  color: var(--body-text-color-subdued);
+}
+#wage-result a {
+  color: var(--lg-accent);
+  font-weight: 600;
+  text-underline-offset: 3px;
+}
+
+/* 닫기 — 아래 띠에 고정된 꽉 찬 버튼 */
+#wage-close {
+  flex: 0 0 auto;
+  align-self: stretch;
+  width: auto !important; /* Gradio 기본 width: 100%에 좌우 margin이 더해져 오른쪽으로 삐져나오지 않게 */
+  margin: 12px 22px 18px;
+  min-height: 46px;
+  background: var(--button-primary-background-fill) !important;
+  border: none !important;
+  border-radius: 12px !important;
+  color: var(--button-primary-text-color) !important;
+  font-size: 1rem;
+  font-weight: 600;
+}
+#wage-close:hover {
+  background: var(--button-primary-background-fill-hover) !important;
+}
+#wage-close:focus-visible {
+  outline: 2px solid var(--lg-accent);
+  outline-offset: 2px;
 }
