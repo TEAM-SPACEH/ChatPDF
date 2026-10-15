@@ -62,7 +62,7 @@ I18N = {
         "home_btn": "홈으로",
         "question_placeholder": "예) 수습기간에도 최저임금을 다 받아야 하나요?",
         "example_questions": [
-            "주 15시간 넘게 알바하면 주휴수당 받나요?",
+            "회사가 해고하려면 며칠 전에 알려줘야 하나요?",
             "근로계약서에 꼭 들어가야 하는 내용은 뭔가요?",
             "1년 일하고 그만두면 퇴직금을 받을 수 있나요?",
         ],
@@ -139,7 +139,7 @@ I18N = {
         "home_btn": "ホームへ",
         "question_placeholder": "例）試用期間でも最低賃金を全額もらえますか？",
         "example_questions": [
-            "週15時間を超えてバイトすると週休手当はもらえますか？",
+            "会社が解雇するには何日前に知らせる必要がありますか？",
             "労働契約書に必ず記載すべき内容は何ですか？",
             "1年働いて辞めると退職金はもらえますか？",
         ],
@@ -217,7 +217,7 @@ I18N = {
         "home_btn": "Home",
         "question_placeholder": "e.g., Do I get the full minimum wage even during probation?",
         "example_questions": [
-            "If I work over 15 hours a week part-time, do I get weekly holiday pay?",
+            "How many days in advance must a company give notice before dismissing me?",
             "What must be included in an employment contract?",
             "If I work one year and quit, can I get severance pay?",
         ],
@@ -298,7 +298,7 @@ I18N = {
         "home_btn": "返回首页",
         "question_placeholder": "例）试用期也应全额支付最低工资吗？",
         "example_questions": [
-            "每周打工超过15小时能拿到周休津贴吗？",
+            "公司解雇员工需要提前几天通知？",
             "劳动合同必须包含哪些内容？",
             "工作满一年后离职能拿到退职金吗？",
         ],
@@ -372,7 +372,7 @@ I18N = {
         "home_btn": "Trang chủ",
         "question_placeholder": "Ví dụ) Trong thời gian thử việc tôi có được nhận đủ lương tối thiểu không?",
         "example_questions": [
-            "Làm thêm hơn 15 giờ mỗi tuần thì có được phụ cấp nghỉ hằng tuần không?",
+            "Công ty phải báo trước bao nhiêu ngày khi sa thải?",
             "Hợp đồng lao động bắt buộc phải có những nội dung gì?",
             "Làm việc một năm rồi nghỉ thì có được nhận trợ cấp thôi việc không?",
         ],
