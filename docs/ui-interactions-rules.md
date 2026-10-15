@@ -34,7 +34,7 @@ B가 하지 않는 일 (A 또는 RAG 담당):
 
 | 파일 | 역할 |
 | --- | --- |
-| `ui/events.py` | `bind_events(ui)` 하나만 둡니다. 컴포넌트에 이벤트를 연결합니다. 로직은 넣지 않습니다. |
+| `ui/events.py` | 진입점은 `bind_events(ui)` 하나입니다. 컴포넌트에 이벤트를 연결합니다. 로직은 넣지 않습니다. (예외: 화면 전환용 작은 함수 `_show_screen`, [5-4](#5-4-화면-전환-홈--각-화면)) |
 | `ui/chat_actions.py` | 이벤트가 호출하는 핸들러 함수와 벡터DB 준비(`prepare_db`)를 둡니다. RAG 결과를 화면용 데이터로 가공합니다. |
 
 - RAG 기능은 `rag.answer_chain`의 `answer`와 `rag.translate`의 `translate`만 import해서 씁니다. 그 밖의 RAG 내부 코드를 직접 가져다 쓰지 않습니다.
@@ -51,9 +51,12 @@ A의 `build_layout()`은 아래 key를 **빠짐없이, 이 이름 그대로** �
 | `ask_btn` | `gr.Button` | 질문하기 | `.click()`으로 전송 |
 | `clear_btn` | `gr.Button` | 대화 초기화 | `.click()`으로 채팅·상태 비우기 |
 | `example_btns` | `list[gr.Button]` | 추천 질문 버튼들 | 각 버튼 `.click()`으로 질문 자동 전송 |
-| `lang_btn` | `gr.Button` | 맨 위 지구본(🌐) 버튼 | `.click()`으로 `language` 목록 펼치기/접기(열림 여부는 `gr.State`) |
-| `language` | `gr.Radio` | 질문·답변 언어 선택(한국어·日本語·English·中文) | `on_ask`의 입력으로 받아 질문을 한국어로·답변을 선택 언어로 번역, 선택 시 화면 문구 전체 교체 |
-| `i18n` | `dict` | 언어 변경 시 글자를 바꿀 화면 문구 컴포넌트 모음 | `language.change`에서 `localize(lang)`로 각 컴포넌트 갱신 |
+| `screens` | `dict[str, gr.Column]` | 화면 4개 — key는 `"home"`, `"chat"`, `"villain"`, `"calc"` | 메뉴·홈 버튼을 누르면 하나만 보이게 전환 |
+| `menu_btns` | `dict[str, gr.Button]` | 홈 메뉴 버튼 — key는 `"chat"`, `"villain"`, `"calc"` (`screens`의 key와 같음) | `.click()`으로 같은 이름의 화면으로 전환 |
+| `home_btns` | `list[gr.Button]` | 각 화면 왼쪽 위 뒤로가기 아이콘 버튼들 (글자 "홈으로"는 숨기고 화면 낭독기만 읽음) | `.click()`으로 홈 화면으로 전환 |
+| `lang_btn` | `gr.Button` | 맨 위 오른쪽 지구본(🌐) 버튼 (모든 화면 공통) | `.click()`으로 `language` 목록 펼치기/접기(열림 여부는 `gr.State`) |
+| `language` | `gr.Radio` | 질문·답변 언어 선택(한국어·日本語·English·中文·Tiếng Việt). 처음엔 `visible=False` | `on_ask`의 입력으로 받아 질문을 한국어로·답변을 선택 언어로 번역, 선택 시 화면 문구 전체 교체 |
+| `i18n` | `dict` | 언어 변경 시 글자를 바꿀 화면 문구 컴포넌트 모음 — `home_hero`, `screen_titles`(화면 key별), `notices`, `coming_soons`, `tab_chat`, `tab_faq`, `faq_accordions`, `faq_answers`, `source_note` | `language.change`에서 `localize(lang)`로 각 컴포넌트 갱신 |
 
 정해둔 세부 사항:
 
@@ -89,18 +92,30 @@ A의 `build_layout()`은 아래 key를 **빠짐없이, 이 이름 그대로** �
 순서:
 
 1. 사용자 메시지 `{"role": "user", "content": 질문}`을 `chatbot`에 추가합니다.
-2. 답변 자리 `{"role": "assistant", "content": "⏳ 답변을 찾는 중..."}`을 추가하고 바로 `yield`합니다. (로딩 표시)
+2. 답변 자리 `{"role": "assistant", "content": _busy(t["loading"])}`을 추가하고 바로 `yield`합니다. (로딩 표시)
+   - 로딩 문구는 선택한 언어로 나옵니다(`ui/content.py`의 `loading`). `_busy()`가 붙이는 보이지 않는 표식 `<span class="judge-busy"></span>`이 들어 있습니다. 이 표식이 채팅창에 있는 동안 A의 캐릭터가 움직이므로 **지우지 마세요.** 답변·오류·빈 답변 어느 경우든 이 메시지를 덮어써야 캐릭터가 멈춥니다.
 3. `answer(question, OPENAI_API_KEY, db)`(`rag/answer_chain.py`)가 `yield`하는 텍스트로 마지막 assistant 메시지의 `content`를 **덮어씁니다**. `answer()`는 조각이 아니라 **지금까지 누적된 전체 텍스트**를 돌려주므로 이어 붙이지 않습니다.
-4. 출처는 `answer()`의 마지막 출력에 이미 포함되어 옵니다 ([5-5](#5-5-출처-표시)).
+4. 출처는 `answer()`의 마지막 출력에 이미 포함되어 옵니다 ([5-6](#5-6-출처-표시)).
 5. 전송 후 `question` 입력창은 비웁니다.
 
 권장 시그니처:
 
 ```python
-def on_ask(question, history):
+def on_ask(question, history, language):
     ...
     yield history, ""   # (chatbot, question)
 ```
+
+#### 선택 언어로 질문·답변 (`on_ask`의 언어 처리)
+
+- `on_ask(question, history, language)`로 선택 언어 value를 함께 받습니다.
+- `language`가 `Korean`(기본값)이면 번역 없이 위 순서 그대로 동작합니다.
+- 그 외 언어이면:
+  1. 질문을 `rag.translate`의 `translate(question, "Korean", key)`로 한국어로 번역하고, 번역된 한국어 질문을 사용자 말풍선에 함께 보여줍니다.
+  2. 번역된 한국어 질문으로 `answer()`를 호출해 한국어 답변을 받습니다.
+  3. 한국어 답변을 `translate(ko_answer, language, key)`로 선택 언어로 번역해 스트리밍 출력합니다.
+- 각 단계는 선택 언어의 로딩 문구(`translating_question`, `loading`, `translating_answer`)를 거칩니다. 세 문구 모두 `_busy()`로 감싸서 `.judge-busy` 표식이 들어 있어 번역 중에도 캐릭터가 움직입니다. 오류는 해당 단계용 메시지로 바꿔 보여줍니다(민감정보 마스킹).
+- **진행 중·오류 문구는 전부 선택 언어로** 보여줍니다. 문구는 `ui/content.py`의 `I18N[언어]`(`empty_question`, `err_*`, `no_answer`, `no_translation`, `db_error`)에 있습니다. 벡터DB 오류는 한국어일 때만 원인(운영자용)을 그대로, 다른 언어는 짧은 안내(`db_error`)로 보여줍니다.
 
 ### 5-3. 추천 질문 버튼
 
@@ -108,37 +123,41 @@ def on_ask(question, history):
 
 ```python
 for btn in ui["example_btns"]:
-    btn.click(on_ask, inputs=[btn, ui["chatbot"]], outputs=[ui["chatbot"], ui["question"]])
+    btn.click(on_ask, inputs=[btn, ui["chatbot"], ui["language"]], outputs=[ui["chatbot"], ui["question"]])
 ```
 
-### 5-2-2. 선택 언어로 질문·답변 (`on_ask`의 언어 처리)
+### 5-4. 화면 전환 (홈 ↔ 각 화면)
 
-- `on_ask(question, history, language)`로 선택 언어 value를 함께 받습니다.
-- `language`가 `Korean`(기본값)이면 번역 없이 기존 방식 그대로 동작합니다.
-- 그 외 언어이면:
-  1. 질문을 `rag.translate`의 `translate(question, "Korean", key)`로 한국어로 번역하고, 번역된 한국어 질문을 사용자 말풍선에 함께 보여줍니다.
-  2. 번역된 한국어 질문으로 `answer()`를 호출해 한국어 답변을 받습니다.
-  3. 한국어 답변을 `translate(ko_answer, language, key)`로 선택 언어로 번역해 스트리밍 출력합니다.
-- 각 단계는 로딩 문구(`⏳ 질문을 번역하는 중...`, `⏳ 답변을 찾는 중...`, `⏳ 답변을 번역하는 중...`)를 거치고, 오류는 해당 단계용 메시지로 바꿔 보여줍니다(민감정보 마스킹).
+- `menu_btns`의 각 버튼은 **같은 key의 화면**을, `home_btns`의 버튼은 `"home"` 화면을 보이게 합니다.
+- 출력은 `screens`의 Column 4개이고, 고른 화면만 `visible=True`, 나머지는 `False`로 돌려줍니다. 화면을 바꿔도 채팅 기록은 그대로 남습니다(숨기기만 함).
+- 서버 왕복을 빠르게 하려고 `queue=False`, `show_progress="hidden"`으로 걸고, 화면이 바뀌면 맨 위로 스크롤합니다(`js`).
+- 화면 전환은 상태가 없는 단순 전환이라 핸들러는 `events.py` 안의 작은 함수로 둡니다(`chat_actions.py`에 넣지 않음).
 
-### 5-2-3. 지구본 언어 메뉴 (`lang_btn`)
+#### 지구본 언어 메뉴 (`lang_btn`, `language`)
 
 - `lang_btn.click`은 `language`(처음 `visible=False`)의 펼침/접힘을 토글합니다. 열림 여부는 UI 전용 `gr.State(False)`로 `bind_events` 안에서 만듭니다(화면 상태라 `chat_actions.py`에 두지 않습니다).
 - `language.change`는 ① 메뉴를 닫고(`visible=False`) ② 지구본 글자를 `language_button_text(value)`로 바꾸고 ③ **화면 문구 전체를 선택 언어로 교체**합니다.
-- 화면 문구 교체는 `ui.content.localize(value)`가 돌려주는 언어별 문구로, `i18n` 묶음의 각 컴포넌트를 `gr.update`(value/placeholder/label)로 바꿉니다. 출력 컴포넌트 순서(`text_targets`)와 핸들러가 돌려주는 update 순서가 **반드시 같아야** 하므로, 둘 다 같은 순서(헤더→안내→chatbot→question→ask/clear→추천질문→탭→FAQ라벨→FAQ답변→법령요약→출처)로 맞춥니다.
+- 화면 문구 교체는 `ui.content.localize(value)`가 돌려주는 언어별 문구로, 홈·메뉴·뒤로가기·화면 이름·면책 고지·준비 중·채팅·FAQ 컴포넌트를 `gr.update`(value/placeholder/label)로 바꿉니다. 판사 말풍선이 든 HTML(홈 머리, 빈 채팅창, 준비 중)은 `ui/layout.py`의 `home_hero_html`·`chat_empty_html`·`coming_soon_html`로 다시 만듭니다.
+- 출력 컴포넌트 순서(`text_targets`)와 핸들러가 돌려주는 update 순서가 **반드시 같아야** 합니다.
+- 서버를 거치지 않는 글자는 `.then(js=...)`로 브라우저에서 바꿉니다: 글자 크기 버튼·목록(`ui/font_size.py`의 `LANGUAGE_JS`), 브라우저 탭 제목(`_TITLE_JS`).
+- 마지막으로 `on_translate_history(chatbot, language)`가 **이미 주고받은 대화 말풍선을 새 언어로 번역**합니다(`chat_actions.py`).
+  - 말풍선마다 `translate()`를 부르며, 여러 개를 동시에(최대 8개) 번역합니다. OpenAI 호출이라 화면 문구보다 조금 늦게 바뀝니다.
+  - 질문 말풍선의 `> 🇰🇷` 줄(`KO_QUESTION_MARK`, 검색에 쓴 한국어 질문)은 번역하지 않고 두며, 한국어로 돌아가면 본문과 겹치므로 뺍니다.
+  - 답변 준비 중(로딩 표식이 있는) 말풍선은 건너뛰고, 번역에 실패한 말풍선은 원래 글자를 그대로 둡니다. 대화가 비어 있으면 아무것도 하지 않습니다(`gr.skip()`).
+  - Gradio 6은 메시지 `content`를 `[{"type": "text", "text": ...}]` 목록으로 넘겨주므로 `_text_of()`로 글자만 꺼내 씁니다.
 
-### 5-4. 대화 초기화 (`on_clear`)
+### 5-5. 대화 초기화 (`on_clear`)
 
 - `chatbot`은 빈 리스트, `question`은 빈 문자열로 되돌립니다.
 - 벡터DB는 **유지**합니다. 초기화 후에도 바로 다시 질문할 수 있어야 합니다.
 
-### 5-5. 출처 표시
+### 5-6. 출처 표시
 
 - 출처는 **RAG 담당이 처리**합니다. `answer()`가 마지막 `yield`에 답변 + 출처(`---` / `**검색된 참고 문서**` / 목록)를 붙여서 돌려줍니다 (`rag/source_formatter.py`, PR #5).
 - B는 `answer()`가 준 텍스트를 그대로 채팅창에 덮어쓰기만 하므로 출처 처리 코드를 따로 두지 않습니다. 같은 기능이 두 곳에 생기지 않게 하기 위해서입니다.
 - 출처 형식을 바꾸고 싶으면 RAG 담당에게 요청합니다.
 
-### 5-6. 오류 처리
+### 5-7. 오류 처리
 
 | 상황 | 처리 |
 | --- | --- |

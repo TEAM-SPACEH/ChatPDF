@@ -4,6 +4,7 @@
 import os
 import re
 import threading
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import gradio as gr
@@ -12,7 +13,7 @@ from langchain_openai import OpenAIEmbeddings
 
 from rag.answer_chain import answer
 from rag.translate import translate
-from ui.content import DEFAULT_LANGUAGE
+from ui.content import DEFAULT_LANGUAGE, localize
 
 try:
     # 로컬에서는 .env의 OPENAI_API_KEY를 읽습니다. (Spaces에서는 Secrets가 환경변수로 들어옵니다)
@@ -27,9 +28,15 @@ DB_DIR = Path(os.getenv("CHROMA_DB_DIR", Path(__file__).parent.parent / "chroma_
 COLLECTION_NAME = "labor_laws"
 EMBEDDING_MODEL = "text-embedding-3-large"
 
-LOADING_TEXT = "⏳ 답변을 찾는 중..."
-TRANSLATING_Q_TEXT = "⏳ 질문을 번역하는 중..."
-TRANSLATING_TEXT = "⏳ 답변을 번역하는 중..."
+# .judge-busy는 화면에 안 보이는 표식입니다. 이게 채팅창에 있는 동안 캐릭터가 움직입니다(ui/style.css).
+# 문구는 선택한 언어로 보여줍니다(ui/content.py의 loading, translating_question, translating_answer).
+_BUSY = '<span class="judge-busy"></span>'
+# 번역해서 보낸 질문 말풍선에 붙이는 "검색에 쓴 한국어 질문" 줄의 머리. 대화 번역 때 이 줄은 번역하지 않습니다.
+KO_QUESTION_MARK = "\n\n> 🇰🇷 "
+
+
+def _busy(text):
+    return f"{_BUSY}⏳ {text}"
 _API_KEY_PATTERN = re.compile(r"sk-[A-Za-z0-9_\-*]{4,}")
 
 # 앱 전체에서 한 번만 불러오는 벡터DB (사용자마다 새로 불러오지 않습니다)
@@ -86,36 +93,40 @@ def _full(gen):
 
 
 def on_ask(question, history, language):
+    # 진행 중·오류 문구는 모두 선택한 언어로 보여줍니다(ui/content.py).
+    target = language or DEFAULT_LANGUAGE
+    t = localize(target)
+
     question = (question or "").strip()
     if not question:
-        raise gr.Error("질문을 입력하세요.")
+        raise gr.Error(t["empty_question"])
     # answer()는 제너레이터라 첫 yield 전까지 오류가 나지 않으므로 여기서 먼저 확인합니다.
     db = prepare_db()
     if db is None:
-        raise gr.Error(_db_error)
+        # 한국어는 원인을 그대로(운영자용), 다른 언어는 원인 대신 짧은 안내를 보여줍니다.
+        raise gr.Error(_db_error if target == DEFAULT_LANGUAGE else t["db_error"])
 
     key = _openai_key()
-    target = language or DEFAULT_LANGUAGE
     # 한국어를 고르면 번역 없이 기존 방식 그대로 동작합니다.
     translating = target != "Korean"
 
     history = list(history or [])
     user_idx = len(history)
     history.append({"role": "user", "content": question})
-    history.append({"role": "assistant", "content": LOADING_TEXT})
+    history.append({"role": "assistant", "content": _busy(t["loading"])})
     yield history, ""
 
     # 1. 질문을 한국어로 번역 (RAG는 한국어 문서로 검색/답변하므로)
     rag_question = question
     if translating:
-        history[-1] = {"role": "assistant", "content": TRANSLATING_Q_TEXT}
+        history[-1] = {"role": "assistant", "content": _busy(t["translating_question"])}
         yield history, ""
         try:
             q_ko = _full(translate(question, "Korean", key)).strip()
         except Exception as e:
             history[-1] = {
                 "role": "assistant",
-                "content": f"⚠️ 질문 번역 중 오류가 발생했어요: {_mask_secret(str(e))}",
+                "content": f"{t['err_translate_question']} {_mask_secret(str(e))}",
             }
             yield history, ""
             return
@@ -123,9 +134,9 @@ def on_ask(question, history, language):
         # 번역된 한국어 질문을 사용자 말풍선에 함께 보여줍니다.
         history[user_idx] = {
             "role": "user",
-            "content": f"{question}\n\n> 🇰🇷 {rag_question}",
+            "content": f"{question}{KO_QUESTION_MARK}{rag_question}",
         }
-        history[-1] = {"role": "assistant", "content": LOADING_TEXT}
+        history[-1] = {"role": "assistant", "content": _busy(t["loading"])}
         yield history, ""
 
     # 2. RAG 답변 (한국어). 한국어 선택 시엔 바로 스트리밍으로 보여줍니다.
@@ -141,7 +152,7 @@ def on_ask(question, history, language):
     except Exception as e:
         history[-1] = {
             "role": "assistant",
-            "content": f"⚠️ 답변 생성 중 오류가 발생했어요: {_mask_secret(str(e))}",
+            "content": f"{t['err_answer']} {_mask_secret(str(e))}",
         }
         yield history, ""
         return
@@ -149,7 +160,7 @@ def on_ask(question, history, language):
     if not ko_answer:
         history[-1] = {
             "role": "assistant",
-            "content": "답변을 생성하지 못했어요. 질문을 바꿔서 다시 시도해 주세요.",
+            "content": t["no_answer"],
         }
         yield history, ""
         return
@@ -158,7 +169,7 @@ def on_ask(question, history, language):
         return  # 한국어는 이미 스트리밍으로 출력했습니다.
 
     # 3. 한국어 답변을 선택한 언어로 번역해 출력합니다.
-    history[-1] = {"role": "assistant", "content": TRANSLATING_TEXT}
+    history[-1] = {"role": "assistant", "content": _busy(t["translating_answer"])}
     yield history, ""
     try:
         text = ""
@@ -170,7 +181,7 @@ def on_ask(question, history, language):
     except Exception as e:
         history[-1] = {
             "role": "assistant",
-            "content": f"⚠️ 답변 번역 중 오류가 발생했어요: {_mask_secret(str(e))}",
+            "content": f"{t['err_translate_answer']} {_mask_secret(str(e))}",
         }
         yield history, ""
         return
@@ -178,9 +189,50 @@ def on_ask(question, history, language):
     if not text:
         history[-1] = {
             "role": "assistant",
-            "content": "번역하지 못했어요. 잠시 후 다시 시도해 주세요.",
+            "content": t["no_translation"],
         }
         yield history, ""
+
+
+def _text_of(content):
+    """채팅 메시지 content에서 글자만 꺼냅니다. Gradio 6은 [{"type": "text", "text": ...}] 목록으로 넘겨줍니다."""
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        return "".join(part.get("text", "") for part in content if isinstance(part, dict))
+    return None  # 글자가 아닌 메시지(파일 등)는 건드리지 않습니다.
+
+
+def _translate_message(text, target, key):
+    """말풍선 하나를 target 언어로 번역합니다. 실패하면 원래 글자를 그대로 돌려줍니다."""
+    body, mark, ko_line = text.partition(KO_QUESTION_MARK)
+    try:
+        body = _full(translate(body, target, key)).strip() or body
+    except Exception as e:
+        print(f"[ChatPDF] 대화 번역 실패: {_mask_secret(str(e))}")
+        return text
+    # 한국어로 돌아가면 "검색에 쓴 한국어 질문" 줄은 본문과 겹치므로 뺍니다.
+    if mark and target != DEFAULT_LANGUAGE:
+        return f"{body}{mark}{ko_line}"
+    return body
+
+
+def on_translate_history(history, language):
+    """언어를 바꾸면 이미 주고받은 대화 말풍선도 새 언어로 번역합니다. 여러 말풍선을 동시에 번역합니다."""
+    history = list(history or [])
+    key = _openai_key()
+    target = language or DEFAULT_LANGUAGE
+    texts = [_text_of(m.get("content")) for m in history]
+    # 비어 있거나, 글자가 아니거나, 아직 답변 준비 중(로딩 표식)인 말풍선은 건너뜁니다.
+    todo = [i for i, x in enumerate(texts) if x and x.strip() and _BUSY not in x]
+    if not todo or not key:
+        return gr.skip()
+
+    with ThreadPoolExecutor(max_workers=min(8, len(todo))) as pool:
+        results = pool.map(lambda i: _translate_message(texts[i], target, key), todo)
+        for i, text in zip(todo, results):
+            history[i] = {"role": history[i]["role"], "content": text}
+    return history
 
 
 def on_clear():
