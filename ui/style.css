@@ -4,6 +4,14 @@
    색 근거와 결정 내용은 docs/ui-tone-redesign-spec.md 참고. */
 /* 글꼴은 전부 Pretendard. Google Fonts에 없어서 jsDelivr에서 불러옵니다. */
 @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css");
+/* 언어 목록의 국기 — Windows는 국기 이모지를 "KR" 같은 글자로 보여주므로 국기 그림만 담은 웹폰트를 씁니다.
+   unicode-range로 국기 글자에만 쓰이고, 폰트 이름은 ui/layout.py의 THEME font 맨 앞에 있습니다. */
+@font-face {
+  font-family: "Twemoji Country Flags";
+  unicode-range: U+1F1E6-1F1FF, U+1F3F4, U+E0062-E0063, U+E0065, U+E0067, U+E006C, U+E006E, U+E0073-E0074, U+E0077, U+E007F;
+  src: url("https://cdn.jsdelivr.net/npm/country-flag-emoji-polyfill@0.1.8/dist/TwemojiCountryFlags.woff2") format("woff2");
+  font-display: swap;
+}
 
 /* 테마에 다크 모드 값이 없는 색만 여기서 정합니다. */
 :root {
@@ -24,7 +32,7 @@
   width: 100% !important;
   max-width: 760px !important;
   margin: 0 auto !important;
-  padding-top: 40px !important;
+  padding-top: 0 !important; /* Gradio가 안쪽(.main)에 16px을 이미 둡니다 */
   word-break: keep-all; /* 한국어는 단어 중간에서 줄이 바뀌지 않게 */
   overflow-wrap: anywhere;
 }
@@ -56,8 +64,13 @@
   min-width: 0 !important;
   overflow: visible !important;
 }
+/* Gradio가 HTML 상자 안쪽에 넣는 위아래 여백을 지워 지구본 버튼과 높이를 맞춤 */
+#font-size .html-container {
+  padding: 0 !important;
+}
 .font-size-control {
   position: relative;
+  display: flex;
 }
 
 /* 지구본 버튼과 "글자 크기 : 보통 ⌄" 버튼은 같은 모양 */
@@ -471,7 +484,7 @@ html[data-font-size="xxl"] {
   padding: 0 !important;
 }
 
-/* 답변 준비 중 — B의 LOADING_TEXT 안 표식(.judge-busy)이 그 자리에서 전신 판사로 변해 판사봉을 두드립니다.
+/* 답변 준비 중 — B의 로딩 문구(_busy) 안 표식(.judge-busy)이 그 자리에서 전신 판사로 변해 판사봉을 두드립니다.
    (6컷 스프라이트 ui/assets/judge-sprite.webp, 컷당 144×192) 답변이 오면 메시지가 덮어써져 자연스럽게 사라집니다. */
 #chatbot .bot:has(.judge-busy) {
   background: transparent !important;
@@ -693,7 +706,7 @@ html[data-font-size="xxl"] {
 /* 반응형: 좁은 화면(768px 이하)에서는 세로로 한 줄씩 쌓기 */
 @media (max-width: 768px) {
   .gradio-container {
-    padding-top: 24px !important;
+    padding-top: 0 !important;
   }
   .home-hero h1 {
     font-size: 2.1rem;

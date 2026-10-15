@@ -74,6 +74,7 @@ UI A는 **화면에 보이는 것**을 만들고, UI B는 **그 화면이 어떻
 ### 글자 크기 조절 (`ui/font_size.py`)
 
 - 고용노동부 「AI 노동법 상담」처럼 "글자 크기 : 보통 ⌄" 버튼을 누르면 "가" 미리보기가 붙은 5단계 목록이 열립니다. 마우스와 키보드(↑↓ 이동, Enter 선택, Esc 닫기) 모두 됩니다.
+- 버튼·목록 글자(`font_size_label`, `font_sizes`, `font_sample`)는 `ui/content.py`의 `I18N`에 있고, 언어를 바꾸면 `LANGUAGE_JS`가 브라우저에서 바꿔 끼웁니다(고른 단계는 유지).
 - **브라우저에서만** 동작합니다. `gr.HTML`의 `js_on_load`가 고른 단계를 `<html data-font-size="sm|lg|xl|xxl">`로 바꾸고(보통은 속성 없음), `localStorage`(`nodong-font-size`)에 저장합니다. 서버 이벤트가 아니라서 key 표와 `ui/events.py`에는 들어가지 않습니다.
 - 실제 크기는 `ui/style.css`의 `html[data-font-size=...]` 규칙이 정합니다. Gradio 글자 변수(`--text-xs` ~ `--text-xxl`)와 `html` 글자 크기를 같은 비율(작게 ×0.9 · 조금 크게 ×1.1 · 크게 ×1.2 · 가장 크게 ×1.3)로 바꿉니다.
 - 그래서 새 스타일을 쓸 때 글자 크기는 **`rem`이나 Gradio 변수(`var(--text-md)` 등)로** 씁니다. `px`로 고정하면 글자 크기 조절을 따라오지 않습니다.
@@ -100,11 +101,11 @@ UI A는 **화면에 보이는 것**을 만들고, UI B는 **그 화면이 어떻
 - `example_btns`는 버튼 **리스트**입니다. B는 버튼에 적힌 글자(`value`)를 질문으로 사용하므로, 버튼 글자 = 실제 질문 문장으로 씁니다.
 - 추천 질문 문장은 `ui/content.py`의 `EXAMPLE_QUESTIONS`에 둡니다. README의 대상 사용자 시나리오(알바·사회초년생·일용직)에 맞춰 고릅니다.
 - 언어 선택은 **모든 화면 맨 위 오른쪽**(`#topbar`)에 글자 크기 선택과 나란히 둡니다. 지구본 버튼 `lang_btn`(`🌐 현재언어`)을 누르면 아래로 `language`(`gr.Radio`, 처음엔 `visible=False`) 목록이 펼쳐집니다. 지구본 글자는 `ui/content.py`의 `language_button_text()`로 만듭니다.
-- `language` 선택지(화면 글자, 전달 value)와 기본값은 `ui/content.py`의 `LANGUAGES`·`DEFAULT_LANGUAGE`에 둡니다. value는 번역에 쓰는 영어 언어명(`Korean`/`Japanese`/`English`/`Chinese`/`Vietnamese`)이며, 기본값 `Korean`일 때는 질문·답변 번역 없이 동작합니다.
-- **화면 문구 다국어**: 모든 화면 글자는 `ui/content.py`의 `I18N[언어]`에 모아 두고, 레이아웃 초기 렌더는 한국어 상수(`APP_NAME` 등, `I18N["Korean"]`에서 파생)로 만듭니다. 언어를 바꾸면 B가 `i18n` 묶음의 각 컴포넌트를 `localize(lang)` 값으로 교체합니다. **다섯 언어는 키 구성과 리스트 길이(추천질문 3개·FAQ 5개·메뉴 3개)가 항상 같아야** `language.change`의 출력 개수가 맞습니다.
+- `language` 선택지(화면 글자, 전달 value)와 기본값은 `ui/content.py`의 `LANGUAGE_NAMES`(국기, 이름, value)·`DEFAULT_LANGUAGE`에 둡니다. 목록에는 `🇰🇷 한국어`처럼 국기를 붙이고, 지구본 버튼은 `🌐 한국어`처럼 국기 없이 보여줍니다. Windows는 국기 이모지를 글자(KR)로 보여주므로 `style.css`에서 국기 전용 웹폰트(Twemoji Country Flags, jsDelivr)를 불러와 `THEME` 글꼴 맨 앞에 둡니다. value는 번역에 쓰는 영어 언어명(`Korean`/`Japanese`/`English`/`Chinese`/`Vietnamese`)이며, 기본값 `Korean`일 때는 질문·답변 번역 없이 동작합니다.
+- **화면 문구 다국어**: 모든 화면 글자는 `ui/content.py`의 `I18N[언어]`에 모아 두고, 레이아웃 초기 렌더는 한국어 상수(`APP_NAME` 등, `I18N["Korean"]`에서 파생)로 만듭니다. 언어를 바꾸면 B가 `i18n` 묶음의 각 컴포넌트를 `localize(lang)` 값으로 교체합니다. 로딩 문구(`loading`, `translating_question`, `translating_answer`)도 언어별로 둡니다. **다섯 언어는 키 구성과 리스트 길이(추천질문 3개·FAQ 5개·메뉴 3개)가 항상 같아야** `language.change`의 출력 개수가 맞습니다.
 - 판사 말풍선이 든 HTML(홈 머리, 빈 채팅창, 준비 중)은 `ui/layout.py`의 `home_hero_html(t)`·`chat_empty_html(t)`·`coming_soon_html(t)` 함수로 만듭니다. B가 언어를 바꿀 때 같은 함수로 다시 만듭니다.
 - **출처(문서명·페이지)는 별도 컴포넌트를 만들지 않습니다.** RAG의 `answer()`가 답변 끝에 붙여서 `chatbot`에 표시됩니다.
-- 로딩 표시는 B가 채팅창에 넣는 문구(`LOADING_TEXT`)와 Gradio 기본 로딩을 사용합니다. A는 그 문구 안의 표식 `<span class="judge-busy">`을 CSS로 판사봉 두드리는 판사 애니메이션으로 그립니다(7번).
+- 로딩 표시는 B가 채팅창에 넣는 문구(`I18N`의 `loading` 등, 선택 언어로 표시)와 Gradio 기본 로딩을 사용합니다. A는 그 문구 안의 표식 `<span class="judge-busy">`을 CSS로 판사봉 두드리는 판사 애니메이션으로 그립니다(7번).
 
 ## 5. `gr.Chatbot` 규칙
 

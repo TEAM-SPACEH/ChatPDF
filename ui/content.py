@@ -7,19 +7,22 @@
 # (화면에 보이는 글자, LLM에 전달하는 언어 이름) 쌍입니다. value로는 영어 언어명을 씁니다.
 # 화면 맨 위 지구본 버튼(🌐)을 누르면 아래 목록이 펼쳐집니다.
 LANGUAGE_LABEL = "언어 선택 / Language"
-LANGUAGES = [
-    ("한국어", "Korean"),
-    ("日本語", "Japanese"),
-    ("English", "English"),
-    ("中文", "Chinese"),
-    ("Tiếng Việt", "Vietnamese"),
+# 목록에는 이름 앞에 국기를 붙입니다. 국기 이모지가 그림으로 안 나오는 Windows를 위해
+# ui/style.css에서 국기 전용 웹폰트(Twemoji Country Flags)를 불러옵니다.
+LANGUAGE_NAMES = [
+    ("🇰🇷", "한국어", "Korean"),
+    ("🇯🇵", "日本語", "Japanese"),
+    ("🇺🇸", "English", "English"),
+    ("🇨🇳", "中文", "Chinese"),
+    ("🇻🇳", "Tiếng Việt", "Vietnamese"),
 ]
+LANGUAGES = [(f"{flag} {name}", value) for flag, name, value in LANGUAGE_NAMES]
 # 기본값은 한국어 — 이때는 질문·답변 번역 없이 기존 방식 그대로 동작합니다.
 DEFAULT_LANGUAGE = "Korean"
 
-# 지구본 버튼에 쓰는 아이콘과, value(영어 언어명) → 화면 글자 매핑.
+# 지구본 버튼에 쓰는 아이콘과, value(영어 언어명) → 화면 글자 매핑. 버튼은 국기 없이 '🌐 이름'으로 보여줍니다.
 LANGUAGE_ICON = "🌐"
-LANG_LABELS = {value: label for label, value in LANGUAGES}
+LANG_LABELS = {value: name for _flag, name, value in LANGUAGE_NAMES}
 
 
 def language_button_text(value):
@@ -32,6 +35,9 @@ def language_button_text(value):
 #   app_name, tagline, notice, chat_placeholder(2줄), judge_greeting,
 #   menu(chat·villain·calc), coming_soon, home_btn, question_placeholder,
 #   example_questions(3), tab_chat, tab_faq, ask_btn, clear_btn,
+#   loading, translating_question, translating_answer(답변 준비 중 문구),
+#   empty_question, db_error, err_*, no_answer, no_translation(오류 문구),
+#   judge_alt(캐릭터 그림 설명), font_size_label, font_sizes(5단계, ui/font_size.py 순서), font_sample(미리보기 글자),
 #   source_note, faq(5×(q,a))
 # ──────────────────────────────────────────────────────────────────────────
 I18N = {
@@ -64,6 +70,20 @@ I18N = {
         "tab_faq": "자주 묻는 질문",
         "ask_btn": "질문하기",
         "clear_btn": "대화 지우기",
+        "loading": "답변을 찾는 중...",
+        "translating_question": "질문을 번역하는 중...",
+        "translating_answer": "답변을 번역하는 중...",
+        "empty_question": "질문을 입력하세요.",
+        "db_error": "지금은 답변을 준비할 수 없어요. 잠시 후 다시 시도해 주세요.",
+        "err_translate_question": "⚠️ 질문 번역 중 오류가 발생했어요:",
+        "err_answer": "⚠️ 답변 생성 중 오류가 발생했어요:",
+        "no_answer": "답변을 생성하지 못했어요. 질문을 바꿔서 다시 시도해 주세요.",
+        "err_translate_answer": "⚠️ 답변 번역 중 오류가 발생했어요:",
+        "no_translation": "번역하지 못했어요. 잠시 후 다시 시도해 주세요.",
+        "judge_alt": "판사 캐릭터",
+        "font_size_label": "글자 크기 :",
+        "font_sizes": ["작게", "보통", "조금 크게", "크게", "가장 크게"],
+        "font_sample": "가",
         "source_note": "국가법령정보센터 자료를 바탕으로 2026년 10월에 정리한 요약입니다. 실제 사례는 조문 전문을 확인하세요.",
         "faq": [
             (
@@ -127,6 +147,20 @@ I18N = {
         "tab_faq": "よくある質問",
         "ask_btn": "質問",
         "clear_btn": "会話を消去",
+        "loading": "回答を探しています...",
+        "translating_question": "質問を翻訳しています...",
+        "translating_answer": "回答を翻訳しています...",
+        "empty_question": "質問を入力してください。",
+        "db_error": "現在、回答を準備できません。しばらくしてからもう一度お試しください。",
+        "err_translate_question": "⚠️ 質問の翻訳中にエラーが発生しました：",
+        "err_answer": "⚠️ 回答の生成中にエラーが発生しました：",
+        "no_answer": "回答を生成できませんでした。質問を変えてもう一度お試しください。",
+        "err_translate_answer": "⚠️ 回答の翻訳中にエラーが発生しました：",
+        "no_translation": "翻訳できませんでした。しばらくしてからもう一度お試しください。",
+        "judge_alt": "裁判官のキャラクター",
+        "font_size_label": "文字サイズ：",
+        "font_sizes": ["小", "標準", "やや大", "大", "特大"],
+        "font_sample": "あ",
         "source_note": "国家法令情報センターの資料をもとに2026年10月にまとめた要約です。実際のケースは条文全文をご確認ください。",
         "faq": [
             (
@@ -191,6 +225,20 @@ I18N = {
         "tab_faq": "FAQ",
         "ask_btn": "Ask",
         "clear_btn": "Clear chat",
+        "loading": "Looking for an answer...",
+        "translating_question": "Translating your question...",
+        "translating_answer": "Translating the answer...",
+        "empty_question": "Please enter a question.",
+        "db_error": "We can't prepare an answer right now. Please try again later.",
+        "err_translate_question": "⚠️ An error occurred while translating your question:",
+        "err_answer": "⚠️ An error occurred while generating the answer:",
+        "no_answer": "We couldn't generate an answer. Please rephrase your question and try again.",
+        "err_translate_answer": "⚠️ An error occurred while translating the answer:",
+        "no_translation": "We couldn't translate the answer. Please try again later.",
+        "judge_alt": "Judge character",
+        "font_size_label": "Text size:",
+        "font_sizes": ["Small", "Normal", "Large", "Larger", "Largest"],
+        "font_sample": "A",
         "source_note": "A summary compiled in October 2026 based on Korea's National Law Information Center. For actual cases, check the full text of the provisions.",
         "faq": [
             (
@@ -258,6 +306,20 @@ I18N = {
         "tab_faq": "常见问题",
         "ask_btn": "提问",
         "clear_btn": "清除对话",
+        "loading": "正在查找答案...",
+        "translating_question": "正在翻译问题...",
+        "translating_answer": "正在翻译答案...",
+        "empty_question": "请输入问题。",
+        "db_error": "目前无法准备回答，请稍后再试。",
+        "err_translate_question": "⚠️ 翻译问题时出错：",
+        "err_answer": "⚠️ 生成回答时出错：",
+        "no_answer": "未能生成回答。请换个问法再试一次。",
+        "err_translate_answer": "⚠️ 翻译回答时出错：",
+        "no_translation": "未能翻译，请稍后再试。",
+        "judge_alt": "法官角色",
+        "font_size_label": "字号：",
+        "font_sizes": ["小", "标准", "稍大", "大", "特大"],
+        "font_sample": "字",
         "source_note": "基于韩国国家法令信息中心资料于2026年10月整理的摘要。实际案例请查阅条文全文。",
         "faq": [
             (
@@ -318,6 +380,20 @@ I18N = {
         "tab_faq": "Hỏi đáp",
         "ask_btn": "Hỏi",
         "clear_btn": "Xóa hội thoại",
+        "loading": "Đang tìm câu trả lời...",
+        "translating_question": "Đang dịch câu hỏi...",
+        "translating_answer": "Đang dịch câu trả lời...",
+        "empty_question": "Vui lòng nhập câu hỏi.",
+        "db_error": "Hiện chưa thể chuẩn bị câu trả lời. Vui lòng thử lại sau.",
+        "err_translate_question": "⚠️ Đã xảy ra lỗi khi dịch câu hỏi:",
+        "err_answer": "⚠️ Đã xảy ra lỗi khi tạo câu trả lời:",
+        "no_answer": "Không thể tạo câu trả lời. Vui lòng đổi cách hỏi và thử lại.",
+        "err_translate_answer": "⚠️ Đã xảy ra lỗi khi dịch câu trả lời:",
+        "no_translation": "Không thể dịch. Vui lòng thử lại sau.",
+        "judge_alt": "Nhân vật thẩm phán",
+        "font_size_label": "Cỡ chữ:",
+        "font_sizes": ["Nhỏ", "Vừa", "Hơi lớn", "Lớn", "Lớn nhất"],
+        "font_sample": "A",
         "source_note": "Bản tóm tắt được biên soạn vào tháng 10 năm 2026 dựa trên Trung tâm Thông tin Pháp luật Quốc gia Hàn Quốc. Với trường hợp thực tế, hãy kiểm tra toàn văn điều khoản.",
         "faq": [
             (
@@ -366,6 +442,7 @@ def localize(language):
 _KO = I18N[DEFAULT_LANGUAGE]
 APP_NAME = _KO["app_name"]
 TAGLINE = _KO["tagline"]
+JUDGE_ALT = _KO["judge_alt"]
 NOTICE = _KO["notice"]
 CHAT_PLACEHOLDER = _KO["chat_placeholder"]
 QUESTION_PLACEHOLDER = _KO["question_placeholder"]

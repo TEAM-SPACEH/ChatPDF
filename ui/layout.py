@@ -51,7 +51,8 @@ ACCENT_SOFT_BORDER_DARK = "#4A3135"
 THEME = gr.themes.Base(
     neutral_hue="stone",
     # Pretendard는 style.css의 @import로 불러오고, 여기서는 이름만 지정합니다.
-    font=["Pretendard Variable", "Pretendard", "-apple-system", "system-ui", "sans-serif"],
+    # 국기 전용 폰트를 맨 앞에 둡니다. 국기 이모지 글자에만 쓰이고(unicode-range) 나머지 글자는 Pretendard로 나옵니다.
+    font=["Twemoji Country Flags", "Pretendard Variable", "Pretendard", "-apple-system", "system-ui", "sans-serif"],
 ).set(
     body_background_fill=PAPER,
     body_background_fill_dark=PAPER_DARK,
@@ -116,7 +117,7 @@ def chat_empty_html(t):
     return f"""
 <div class="judge-hero">
   <p class="judge-hero-bubble">{t["judge_greeting"]}</p>
-  <div class="judge-hero-figure" role="img" aria-label="판사 캐릭터"></div>
+  <div class="judge-hero-figure" role="img" aria-label="{t['judge_alt']}"></div>
   <p class="judge-hero-guide">{"<br>".join(t["chat_placeholder"])}</p>
 </div>
 """
@@ -126,7 +127,7 @@ def home_hero_html(t):
     """홈 맨 위: 판사 캐릭터 + 서비스명 + 한 줄 소개"""
     return f"""
 <div class="home-hero">
-  <div class="judge-figure" role="img" aria-label="판사 캐릭터"></div>
+  <div class="judge-figure" role="img" aria-label="{t['judge_alt']}"></div>
   <h1>{t["app_name"]}</h1>
   <p>{t["tagline"]}</p>
 </div>
@@ -138,7 +139,7 @@ def coming_soon_html(t):
     return f"""
 <div class="judge-hero coming-soon">
   <p class="judge-hero-bubble">{t["coming_soon"]}</p>
-  <div class="judge-hero-figure" role="img" aria-label="판사 캐릭터"></div>
+  <div class="judge-hero-figure" role="img" aria-label="{t['judge_alt']}"></div>
 </div>
 """
 

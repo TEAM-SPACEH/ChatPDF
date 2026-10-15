@@ -1,12 +1,19 @@
 # UI B — 이벤트 연결 (.click / .submit)
 import gradio as gr
 
-from ui.chat_actions import on_ask, on_clear
-from ui.content import language_button_text, localize
+from ui.chat_actions import on_ask, on_clear, on_translate_history
+import json
+
+from ui.content import I18N, language_button_text, localize
+from ui.font_size import LANGUAGE_JS as FONT_SIZE_LANGUAGE_JS
 from ui.layout import chat_empty_html, coming_soon_html, home_hero_html
 
 # 화면이 바뀌면 맨 위로 (긴 대화를 보다가 홈으로 돌아올 때 등)
 _SCROLL_TOP_JS = "() => window.scrollTo({top: 0})"
+
+# 언어를 바꾸면 브라우저 탭 제목도 그 언어의 서비스명으로 바꿉니다.
+_APP_NAMES = {lang: t["app_name"] for lang, t in I18N.items()}
+_TITLE_JS = f"(lang) => {{ document.title = {json.dumps(_APP_NAMES, ensure_ascii=False)}[lang] || document.title; }}"
 
 
 def _show_screen(target, names):
@@ -103,4 +110,12 @@ def bind_events(ui):
         on_language_change,
         inputs=[ui["language"]],
         outputs=[lang_open, ui["language"], ui["lang_btn"], *text_targets],
+    ).then(
+        # 서버를 거치지 않는 부분(글자 크기 버튼·브라우저 탭 제목)은 브라우저에서 바꿉니다.
+        None, inputs=[ui["language"]], js=FONT_SIZE_LANGUAGE_JS
+    ).then(None, inputs=[ui["language"]], js=_TITLE_JS).then(
+        # 이미 주고받은 대화 말풍선도 새 언어로 번역합니다(OpenAI 호출이라 화면 문구보다 늦게 바뀝니다).
+        on_translate_history,
+        inputs=[ui["chatbot"], ui["language"]],
+        outputs=[ui["chatbot"]],
     )
