@@ -125,6 +125,70 @@
   font-weight: 600;
 }
 
+/* ───────────── 맨 위 언어 선택 (지구본 🌐) ───────────── */
+/* 지구본 버튼은 오른쪽 위에, 누르면 그 아래로 언어 목록이 펼쳐집니다. */
+#topbar {
+  position: relative;
+  align-items: flex-end !important;
+  gap: 6px !important;
+  margin-bottom: 4px;
+}
+#lang-btn {
+  flex: 0 0 auto !important;
+  width: auto !important;
+  min-width: 0 !important;
+  background: transparent !important;
+  border: 1px solid var(--border-color-primary) !important;
+  color: var(--body-text-color) !important;
+  font-size: 0.9rem !important;
+  padding: 6px 14px !important;
+}
+#lang-btn:hover {
+  border-color: var(--color-accent) !important;
+}
+#lang-btn:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* 펼쳐지는 언어 목록 — 지구본 아래 오른쪽에 떠 있는 메뉴처럼 */
+#language {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 20;
+  width: auto !important;
+  min-width: 140px;
+  margin-top: 6px;
+  padding: 6px !important;
+  background: var(--block-background-fill) !important;
+  border: 1px solid var(--border-color-primary) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 24px rgba(27, 42, 65, 0.12);
+}
+#language fieldset {
+  flex-direction: column !important;
+  gap: 2px !important;
+}
+#language label {
+  font-size: 0.9rem !important;
+  border: none !important;
+  border-radius: 8px !important;
+  padding: 8px 12px !important;
+  transition: background-color 0.15s ease;
+}
+#language label:hover {
+  background: var(--color-accent-soft) !important;
+}
+#language input:checked + span,
+#language label:has(input:checked) {
+  background: var(--lg-mark) !important;
+}
+#language label:focus-within {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}
+
 /* 대화 지우기 — 버튼보다는 글자 링크처럼 */
 #clear-btn {
   max-width: 120px;
@@ -185,7 +249,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .example-btn {
+  .example-btn,
+  #language label {
     transition: none;
   }
 }

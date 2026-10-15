@@ -64,10 +64,17 @@ UI A는 **화면에 보이는 것**을 만들고, UI B는 **그 화면이 어떻
 | `ask_btn` | `gr.Button` | 질문하기 | `.click()`으로 전송 |
 | `clear_btn` | `gr.Button` | 대화 초기화 | `.click()`으로 채팅·입력창 비우기 |
 | `example_btns` | `list[gr.Button]` | 추천 질문 버튼들 | 각 버튼 `.click()`으로 질문 자동 전송 |
+| `lang_btn` | `gr.Button` | 맨 위 지구본(🌐) 버튼 | `.click()`으로 `language` 목록 펼치기/접기 |
+| `language` | `gr.Radio` | 질문·답변 언어 선택(한국어·日本語·English·中文). 처음엔 `visible=False` | `on_ask`의 입력으로 넣어 질문은 한국어로·답변은 선택 언어로 번역, 선택 시 화면 문구 전체를 선택 언어로 교체 |
+| `i18n` | `dict` | 언어 변경 시 글자를 바꿀 화면 문구 컴포넌트 모음(헤더·안내·탭·FAQ·법령요약·출처) | `language.change`에서 각 컴포넌트 값을 `localize(lang)`로 갱신 |
 
 **정해둔 세부 사항**
 - `example_btns`는 버튼 **리스트**입니다. B는 버튼에 적힌 글자(`value`)를 질문으로 사용하므로, 버튼 글자 = 실제 질문 문장으로 씁니다.
 - 추천 질문 문장은 `ui/content.py`의 `EXAMPLE_QUESTIONS`에 둡니다. README의 대상 사용자 시나리오(알바·사회초년생·일용직)에 맞춰 고릅니다.
+- 언어 선택은 화면 **맨 위**(`#topbar`)에 둡니다. 지구본 버튼 `lang_btn`(`🌐 현재언어`)을 누르면 아래로 `language`(`gr.Radio`, 처음엔 `visible=False`) 목록이 펼쳐집니다. 지구본 글자는 `ui/content.py`의 `language_button_text()`로 만듭니다.
+- `language` 선택지(화면 글자, 전달 value)와 기본값은 `ui/content.py`의 `LANGUAGES`·`DEFAULT_LANGUAGE`에 둡니다. value는 번역에 쓰는 영어 언어명(`Korean`/`Japanese`/`English`/`Chinese`)이며, 기본값 `Korean`일 때는 질문·답변 번역 없이 동작합니다.
+- **화면 문구 다국어**: 모든 화면 글자는 `ui/content.py`의 `I18N[언어]`에 모아 두고, 레이아웃 초기 렌더는 한국어 상수(`APP_NAME` 등, `I18N["Korean"]`에서 파생)로 만듭니다. 언어를 바꾸면 B가 `i18n` 묶음의 각 컴포넌트를 `localize(lang)` 값으로 교체합니다. **네 언어는 키 구성과 리스트 길이(추천질문 3개·FAQ 5개)가 항상 같아야** `language.change`의 출력 개수가 맞습니다.
+- 추천 질문 버튼 글자도 언어에 따라 바뀝니다. 버튼 글자가 곧 질문으로 전송되지만, `on_ask`가 질문을 다시 한국어로 번역해 검색하므로 어느 언어든 동작합니다.
 - **출처(문서명·페이지)는 별도 컴포넌트를 만들지 않습니다.** RAG의 `answer()`가 답변 끝에 붙여서 `chatbot`에 표시됩니다.
 - 로딩 표시는 B가 채팅창에 넣는 문구와 Gradio 기본 로딩을 사용하므로 A가 따로 만들지 않습니다.
 

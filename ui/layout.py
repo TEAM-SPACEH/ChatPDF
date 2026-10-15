@@ -6,14 +6,22 @@ import gradio as gr
 
 from ui.content import (
     APP_NAME,
+    ASK_BTN,
     CHAT_PLACEHOLDER,
+    CLEAR_BTN,
+    DEFAULT_LANGUAGE,
     EXAMPLE_QUESTIONS,
     FAQ_ITEMS,
     LABOR_LAW_MD,
+    LANGUAGES,
     NOTICE,
     QUESTION_PLACEHOLDER,
     SOURCE_NOTE,
+    TAB_CHAT,
+    TAB_FAQ,
+    TAB_LAW,
     TAGLINE,
+    language_button_text,
 )
 
 # 테마 — "계약서를 형광펜으로 검토하는" 느낌: 흰 종이, 남색 잉크, 노란 형광펜(style.css).
@@ -62,11 +70,28 @@ THEME = gr.themes.Base(
 
 
 def build_layout():
-    gr.Markdown(f"# {APP_NAME}\n{TAGLINE}", elem_id="app-header")
-    gr.Markdown(NOTICE, elem_id="notice")
+    # 맨 위: 지구본 버튼(🌐) — 누르면 아래 언어 목록이 펼쳐집니다. (이벤트는 ui/events.py)
+    with gr.Column(elem_id="topbar"):
+        lang_btn = gr.Button(
+            language_button_text(DEFAULT_LANGUAGE),
+            size="sm",
+            elem_id="lang-btn",
+        )
+        language = gr.Radio(
+            choices=LANGUAGES,
+            value=DEFAULT_LANGUAGE,
+            show_label=False,
+            visible=False,
+            elem_id="language",
+        )
+
+    header_md = gr.Markdown(f"# {APP_NAME}\n{TAGLINE}", elem_id="app-header")
+    notice_md = gr.Markdown(NOTICE, elem_id="notice")
+
+    source_notes = []  # 두 탭에 들어가는 출처·기준일 문구 (언어 바뀌면 함께 갱신)
 
     with gr.Tabs(elem_id="tabs"):
-        with gr.Tab("질문하기", id="chat", elem_id="tab-chat"):
+        with gr.Tab(TAB_CHAT, id="chat", elem_id="tab-chat") as tab_chat:
             chatbot = gr.Chatbot(
                 show_label=False,
                 height=440,
@@ -86,25 +111,42 @@ def build_layout():
                     elem_id="question",
                 )
                 ask_btn = gr.Button(
-                    "질문하기", variant="primary", scale=1, min_width=96, elem_id="ask-btn"
+                    ASK_BTN, variant="primary", scale=1, min_width=96, elem_id="ask-btn"
                 )
-            clear_btn = gr.Button("대화 지우기", size="sm", variant="secondary", elem_id="clear-btn")
+            clear_btn = gr.Button(CLEAR_BTN, size="sm", variant="secondary", elem_id="clear-btn")
 
-        with gr.Tab("자주 묻는 질문", id="faq", elem_id="tab-faq"):
+        with gr.Tab(TAB_FAQ, id="faq", elem_id="tab-faq") as tab_faq:
+            faq_accordions = []  # 질문(아코디언 라벨)
+            faq_answers = []  # 답변(Markdown)
             for q, a in FAQ_ITEMS:
-                with gr.Accordion(q, open=False, elem_classes="faq-item"):
-                    gr.Markdown(a)
-            gr.Markdown(SOURCE_NOTE, elem_classes="source-note")
+                with gr.Accordion(q, open=False, elem_classes="faq-item") as acc:
+                    faq_accordions.append(acc)
+                    faq_answers.append(gr.Markdown(a))
+            source_notes.append(gr.Markdown(SOURCE_NOTE, elem_classes="source-note"))
 
-        with gr.Tab("법령 요약", id="law", elem_id="tab-law"):
-            gr.Markdown(LABOR_LAW_MD, elem_id="labor-law")
-            gr.Markdown(SOURCE_NOTE, elem_classes="source-note")
+        with gr.Tab(TAB_LAW, id="law", elem_id="tab-law") as tab_law:
+            law_md = gr.Markdown(LABOR_LAW_MD, elem_id="labor-law")
+            source_notes.append(gr.Markdown(SOURCE_NOTE, elem_classes="source-note"))
 
-    # B가 이벤트를 걸 컴포넌트만 반환합니다. (docs/ui-layout-rules.md 4번 표)
+    # B가 이벤트를 걸 컴포넌트와, 언어 변경 시 글자를 바꿀 컴포넌트(i18n)를 함께 반환합니다.
     return {
         "chatbot": chatbot,
         "question": question,
         "ask_btn": ask_btn,
         "clear_btn": clear_btn,
         "example_btns": example_btns,
+        "language": language,
+        "lang_btn": lang_btn,
+        # 언어 변경 시 갱신할 화면 문구 컴포넌트 모음 (docs/ui-layout-rules.md 4번 표)
+        "i18n": {
+            "header": header_md,
+            "notice": notice_md,
+            "tab_chat": tab_chat,
+            "tab_faq": tab_faq,
+            "tab_law": tab_law,
+            "faq_accordions": faq_accordions,
+            "faq_answers": faq_answers,
+            "law_md": law_md,
+            "source_notes": source_notes,
+        },
     }
