@@ -37,7 +37,7 @@ B가 하지 않는 일 (A 또는 RAG 담당):
 | `ui/events.py` | 진입점은 `bind_events(ui)` 하나입니다. 컴포넌트에 이벤트를 연결합니다. 로직은 넣지 않습니다. (예외: 화면 전환용 작은 함수 `_show_screen`, [5-4](#5-4-화면-전환-홈--각-화면)) |
 | `ui/chat_actions.py` | 이벤트가 호출하는 핸들러 함수와 벡터DB 준비(`prepare_db`)를 둡니다. RAG 결과를 화면용 데이터로 가공합니다. |
 
-- RAG 기능은 `rag.answer_chain`의 `answer`만 import해서 씁니다. 그 밖의 RAG 내부 코드를 직접 가져다 쓰지 않습니다.
+- RAG 기능은 `rag.answer_chain`의 `answer`와 `rag.translate`의 `translate`만 import해서 씁니다. 그 밖의 RAG 내부 코드를 직접 가져다 쓰지 않습니다.
 - 핸들러 이름은 `on_<동작>` 형식으로 짓습니다: `on_ask`, `on_clear`
 
 ## 3. 컴포넌트 key 목록 (A↔B 약속)
@@ -54,6 +54,9 @@ A의 `build_layout()`은 아래 key를 **빠짐없이, 이 이름 그대로** �
 | `screens` | `dict[str, gr.Column]` | 화면 4개 — key는 `"home"`, `"chat"`, `"villain"`, `"calc"` | 메뉴·홈 버튼을 누르면 하나만 보이게 전환 |
 | `menu_btns` | `dict[str, gr.Button]` | 홈 메뉴 버튼 — key는 `"chat"`, `"villain"`, `"calc"` (`screens`의 key와 같음) | `.click()`으로 같은 이름의 화면으로 전환 |
 | `home_btns` | `list[gr.Button]` | 각 화면 왼쪽 위 뒤로가기 아이콘 버튼들 (글자 "홈으로"는 숨기고 화면 낭독기만 읽음) | `.click()`으로 홈 화면으로 전환 |
+| `lang_btn` | `gr.Button` | 맨 위 오른쪽 지구본(🌐) 버튼 (모든 화면 공통) | `.click()`으로 `language` 목록 펼치기/접기(열림 여부는 `gr.State`) |
+| `language` | `gr.Radio` | 질문·답변 언어 선택(한국어·日本語·English·中文·Tiếng Việt). 처음엔 `visible=False` | `on_ask`의 입력으로 받아 질문을 한국어로·답변을 선택 언어로 번역, 선택 시 화면 문구 전체 교체 |
+| `i18n` | `dict` | 언어 변경 시 글자를 바꿀 화면 문구 컴포넌트 모음 — `home_hero`, `screen_titles`(화면 key별), `notices`, `coming_soons`, `tab_chat`, `tab_faq`, `faq_accordions`, `faq_answers`, `source_note` | `language.change`에서 `localize(lang)`로 각 컴포넌트 갱신 |
 
 정해둔 세부 사항:
 
@@ -98,10 +101,20 @@ A의 `build_layout()`은 아래 key를 **빠짐없이, 이 이름 그대로** �
 권장 시그니처:
 
 ```python
-def on_ask(question, history):
+def on_ask(question, history, language):
     ...
     yield history, ""   # (chatbot, question)
 ```
+
+#### 선택 언어로 질문·답변 (`on_ask`의 언어 처리)
+
+- `on_ask(question, history, language)`로 선택 언어 value를 함께 받습니다.
+- `language`가 `Korean`(기본값)이면 번역 없이 위 순서 그대로 동작합니다.
+- 그 외 언어이면:
+  1. 질문을 `rag.translate`의 `translate(question, "Korean", key)`로 한국어로 번역하고, 번역된 한국어 질문을 사용자 말풍선에 함께 보여줍니다.
+  2. 번역된 한국어 질문으로 `answer()`를 호출해 한국어 답변을 받습니다.
+  3. 한국어 답변을 `translate(ko_answer, language, key)`로 선택 언어로 번역해 스트리밍 출력합니다.
+- 각 단계는 로딩 문구(`TRANSLATING_Q_TEXT`, `LOADING_TEXT`, `TRANSLATING_TEXT`)를 거칩니다. 세 문구 모두 `.judge-busy` 표식이 들어 있어 번역 중에도 캐릭터가 움직입니다. 오류는 해당 단계용 메시지로 바꿔 보여줍니다(민감정보 마스킹).
 
 ### 5-3. 추천 질문 버튼
 
@@ -109,7 +122,7 @@ def on_ask(question, history):
 
 ```python
 for btn in ui["example_btns"]:
-    btn.click(on_ask, inputs=[btn, ui["chatbot"]], outputs=[ui["chatbot"], ui["question"]])
+    btn.click(on_ask, inputs=[btn, ui["chatbot"], ui["language"]], outputs=[ui["chatbot"], ui["question"]])
 ```
 
 ### 5-4. 화면 전환 (홈 ↔ 각 화면)
@@ -118,6 +131,13 @@ for btn in ui["example_btns"]:
 - 출력은 `screens`의 Column 4개이고, 고른 화면만 `visible=True`, 나머지는 `False`로 돌려줍니다. 화면을 바꿔도 채팅 기록은 그대로 남습니다(숨기기만 함).
 - 서버 왕복을 빠르게 하려고 `queue=False`, `show_progress="hidden"`으로 걸고, 화면이 바뀌면 맨 위로 스크롤합니다(`js`).
 - 화면 전환은 상태가 없는 단순 전환이라 핸들러는 `events.py` 안의 작은 함수로 둡니다(`chat_actions.py`에 넣지 않음).
+
+#### 지구본 언어 메뉴 (`lang_btn`, `language`)
+
+- `lang_btn.click`은 `language`(처음 `visible=False`)의 펼침/접힘을 토글합니다. 열림 여부는 UI 전용 `gr.State(False)`로 `bind_events` 안에서 만듭니다(화면 상태라 `chat_actions.py`에 두지 않습니다).
+- `language.change`는 ① 메뉴를 닫고(`visible=False`) ② 지구본 글자를 `language_button_text(value)`로 바꾸고 ③ **화면 문구 전체를 선택 언어로 교체**합니다.
+- 화면 문구 교체는 `ui.content.localize(value)`가 돌려주는 언어별 문구로, 홈·메뉴·뒤로가기·화면 이름·면책 고지·준비 중·채팅·FAQ 컴포넌트를 `gr.update`(value/placeholder/label)로 바꿉니다. 판사 말풍선이 든 HTML(홈 머리, 빈 채팅창, 준비 중)은 `ui/layout.py`의 `home_hero_html`·`chat_empty_html`·`coming_soon_html`로 다시 만듭니다.
+- 출력 컴포넌트 순서(`text_targets`)와 핸들러가 돌려주는 update 순서가 **반드시 같아야** 합니다.
 
 ### 5-5. 대화 초기화 (`on_clear`)
 

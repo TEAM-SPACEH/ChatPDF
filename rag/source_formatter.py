@@ -7,7 +7,7 @@ def format_sources(docs):
 
         # PDF 메타데이터 가져오기
         law_name = metadata.get("law_name")
-        article = metadata.get("article")
+        article = metadata.get("article_no") or metadata.get("article")
         source = metadata.get("source")
         page = metadata.get("page")
 
@@ -17,10 +17,16 @@ def format_sources(docs):
             filename = str(source).replace("\\", "/").split("/")[-1]
 
         # 페이지 번호 처리 (0부터 시작)
-        page_text = None
-        if isinstance(page, int) and page >= 0:
-            page_text = f"p.{page + 1}"
+        page_end = metadata.get("page_end", page)
 
+        page_text = None
+
+        if isinstance(page, int) and page >= 0:
+            if isinstance(page_end, int) and page_end > page:
+                page_text = f"p.{page + 1}~{page_end + 1}"
+            else:
+                page_text = f"p.{page + 1}"
+        
         # 실제 존재하는 정보만 출처에 포함
         parts = []
 

@@ -9,7 +9,7 @@ UI A는 **화면에 보이는 것**을 만들고, UI B는 **그 화면이 어떻
 
 | 구분 | 파일 |
 | --- | --- |
-| ✅ 수정하는 파일 | `ui/layout.py`, `ui/content.py`, `ui/style.css`, `ui/assets/` |
+| ✅ 수정하는 파일 | `ui/layout.py`, `ui/content.py`, `ui/font_size.py`, `ui/style.css`, `ui/assets/` |
 | ❌ 수정하지 않는 파일 | `ui/events.py`, `ui/chat_actions.py`, `rag/` |
 
 `app.py`는 테마(`THEME`)와 CSS를 `demo.launch()`에 넘기는 줄만 A와 관련 있습니다.
@@ -30,6 +30,8 @@ UI A는 **화면에 보이는 것**을 만들고, UI B는 **그 화면이 어떻
 화면은 4개이고, 한 번에 하나만 보입니다 (`screens`). 주소는 그대로이고 화면만 바뀝니다.
 
 ```
+                     [🌐 한국어] [글자 크기 : 보통 ⌄]   ← #topbar (lang_btn, #font-size) — 모든 화면 맨 위 오른쪽
+
 [홈] #screen-home
  판사 캐릭터
  노동 지킴이 / 한 줄 소개             ← .home-hero
@@ -51,7 +53,7 @@ UI A는 **화면에 보이는 것**을 만들고, UI B는 **그 화면이 어떻
 
 - 화면 전환(홈 ↔ 각 화면)은 `.click()`이 필요하므로 B의 `events.py`에서 연결합니다 (4번 표 `screens`·`menu_btns`·`home_btns`).
 - 챗봇 화면 안의 탭 전환은 Gradio가 처리하므로 `.click()`을 만들지 않습니다.
-- 메뉴 이름·준비 중 문구는 `ui/content.py`의 `MENU_ITEMS`, `COMING_SOON`에 둡니다.
+- 메뉴 이름·준비 중 문구는 `ui/content.py`의 `I18N[언어]`(`menu`, `coming_soon`)에 두고, 한국어 기본값은 `MENU_ITEMS`, `COMING_SOON`으로 꺼내 씁니다.
 - 탭 이름은 모바일(390px)에서 세 개가 한 줄에 들어가도록 짧게 둡니다. 길어지면 Gradio가 탭을 `⋯` 메뉴 안으로 숨깁니다.
 
 ## 3. 파일 역할
@@ -60,13 +62,21 @@ UI A는 **화면에 보이는 것**을 만들고, UI B는 **그 화면이 어떻
 | --- | --- |
 | `ui/layout.py` | `build_layout()`이 컴포넌트를 배치하고 **dict로 반환**합니다. 테마 `THEME`도 여기서 정의합니다. |
 | `ui/content.py` | 서비스명, 메뉴 이름, 안내 문구, 추천 질문, Q&A 같은 **글자만** 둡니다. 문구 검수는 이 파일만 보면 됩니다. |
-| `ui/style.css` | 색·간격·반응형. |
+| `ui/font_size.py` | 글자 크기 조절(작게·보통·조금 크게·크게·가장 크게 5단계 드롭다운). 아래 '글자 크기 조절' 참고. |
+| `ui/style.css` | 색·간격·반응형, 글자 크기 단계별 값. |
 
 `layout.py` 규칙:
 - `layout.py` 안에서 `gr.Blocks()`를 새로 열지 않습니다. 이미 `app.py`에서 열려 있습니다.
 - `rag/`나 `ui/events.py`, `ui/chat_actions.py`를 import하지 않습니다.
 - 이벤트(`.click` 등)를 걸지 않습니다. 버튼을 만들기만 하고 dict에 담아 넘깁니다.
-- 레이아웃용 컴포넌트(`gr.Row`, `gr.Tab`, 꾸밈용 `gr.Markdown`)는 dict에 넣지 않습니다. **B가 이벤트를 걸어야 하는 컴포넌트만** 넣습니다.
+- 레이아웃용 컴포넌트(`gr.Row`, `gr.Tab`, 꾸밈용 `gr.Markdown`)는 dict에 넣지 않습니다. **B가 이벤트를 걸어야 하는 컴포넌트만** 넣습니다. (예외: 언어 변경 때 글자를 바꿔야 하는 컴포넌트는 `i18n` 묶음에 넣습니다.)
+
+### 글자 크기 조절 (`ui/font_size.py`)
+
+- 고용노동부 「AI 노동법 상담」처럼 "글자 크기 : 보통 ⌄" 버튼을 누르면 "가" 미리보기가 붙은 5단계 목록이 열립니다. 마우스와 키보드(↑↓ 이동, Enter 선택, Esc 닫기) 모두 됩니다.
+- **브라우저에서만** 동작합니다. `gr.HTML`의 `js_on_load`가 고른 단계를 `<html data-font-size="sm|lg|xl|xxl">`로 바꾸고(보통은 속성 없음), `localStorage`(`nodong-font-size`)에 저장합니다. 서버 이벤트가 아니라서 key 표와 `ui/events.py`에는 들어가지 않습니다.
+- 실제 크기는 `ui/style.css`의 `html[data-font-size=...]` 규칙이 정합니다. Gradio 글자 변수(`--text-xs` ~ `--text-xxl`)와 `html` 글자 크기를 같은 비율(작게 ×0.9 · 조금 크게 ×1.1 · 크게 ×1.2 · 가장 크게 ×1.3)로 바꿉니다.
+- 그래서 새 스타일을 쓸 때 글자 크기는 **`rem`이나 Gradio 변수(`var(--text-md)` 등)로** 씁니다. `px`로 고정하면 글자 크기 조절을 따라오지 않습니다.
 
 ## 4. 컴포넌트 key 목록 (A↔B 약속)
 
@@ -82,17 +92,24 @@ UI A는 **화면에 보이는 것**을 만들고, UI B는 **그 화면이 어떻
 | `screens` | `dict[str, gr.Column]` | 화면 4개 — key는 `"home"`, `"chat"`, `"villain"`, `"calc"` | 메뉴·홈 버튼을 누르면 하나만 보이게 전환 |
 | `menu_btns` | `dict[str, gr.Button]` | 홈 메뉴 버튼 — key는 `"chat"`, `"villain"`, `"calc"` (`screens`의 key와 같음) | `.click()`으로 같은 이름의 화면으로 전환 |
 | `home_btns` | `list[gr.Button]` | 각 화면 왼쪽 위 뒤로가기 아이콘 버튼들 (글자 "홈으로"는 숨기고 화면 낭독기만 읽음) | `.click()`으로 홈 화면으로 전환 |
+| `lang_btn` | `gr.Button` | 맨 위 오른쪽 지구본(🌐) 버튼 (모든 화면 공통) | `.click()`으로 `language` 목록 펼치기/접기(열림 여부는 `gr.State`) |
+| `language` | `gr.Radio` | 질문·답변 언어 선택(한국어·日本語·English·中文·Tiếng Việt). 처음엔 `visible=False` | `on_ask`의 입력으로 받아 질문을 한국어로·답변을 선택 언어로 번역, 선택 시 화면 문구 전체 교체 |
+| `i18n` | `dict` | 언어 변경 시 글자를 바꿀 화면 문구 컴포넌트 모음 — `home_hero`, `screen_titles`(화면 key별), `notices`, `coming_soons`, `tab_chat`, `tab_faq`, `faq_accordions`, `faq_answers`, `source_note` | `language.change`에서 `localize(lang)`로 각 컴포넌트 갱신 |
 
 **정해둔 세부 사항**
 - `example_btns`는 버튼 **리스트**입니다. B는 버튼에 적힌 글자(`value`)를 질문으로 사용하므로, 버튼 글자 = 실제 질문 문장으로 씁니다.
 - 추천 질문 문장은 `ui/content.py`의 `EXAMPLE_QUESTIONS`에 둡니다. README의 대상 사용자 시나리오(알바·사회초년생·일용직)에 맞춰 고릅니다.
+- 언어 선택은 **모든 화면 맨 위 오른쪽**(`#topbar`)에 글자 크기 선택과 나란히 둡니다. 지구본 버튼 `lang_btn`(`🌐 현재언어`)을 누르면 아래로 `language`(`gr.Radio`, 처음엔 `visible=False`) 목록이 펼쳐집니다. 지구본 글자는 `ui/content.py`의 `language_button_text()`로 만듭니다.
+- `language` 선택지(화면 글자, 전달 value)와 기본값은 `ui/content.py`의 `LANGUAGES`·`DEFAULT_LANGUAGE`에 둡니다. value는 번역에 쓰는 영어 언어명(`Korean`/`Japanese`/`English`/`Chinese`/`Vietnamese`)이며, 기본값 `Korean`일 때는 질문·답변 번역 없이 동작합니다.
+- **화면 문구 다국어**: 모든 화면 글자는 `ui/content.py`의 `I18N[언어]`에 모아 두고, 레이아웃 초기 렌더는 한국어 상수(`APP_NAME` 등, `I18N["Korean"]`에서 파생)로 만듭니다. 언어를 바꾸면 B가 `i18n` 묶음의 각 컴포넌트를 `localize(lang)` 값으로 교체합니다. **다섯 언어는 키 구성과 리스트 길이(추천질문 3개·FAQ 5개·메뉴 3개)가 항상 같아야** `language.change`의 출력 개수가 맞습니다.
+- 판사 말풍선이 든 HTML(홈 머리, 빈 채팅창, 준비 중)은 `ui/layout.py`의 `home_hero_html(t)`·`chat_empty_html(t)`·`coming_soon_html(t)` 함수로 만듭니다. B가 언어를 바꿀 때 같은 함수로 다시 만듭니다.
 - **출처(문서명·페이지)는 별도 컴포넌트를 만들지 않습니다.** RAG의 `answer()`가 답변 끝에 붙여서 `chatbot`에 표시됩니다.
 - 로딩 표시는 B가 채팅창에 넣는 문구(`LOADING_TEXT`)와 Gradio 기본 로딩을 사용합니다. A는 그 문구 안의 표식 `<span class="judge-busy">`을 CSS로 판사봉 두드리는 판사 애니메이션으로 그립니다(7번).
 
 ## 5. `gr.Chatbot` 규칙
 
 - 메시지 형식은 `{"role": "user" | "assistant", "content": "..."}` 딕셔너리 리스트입니다 (Gradio 6 기본 형식). A는 형식 관련 옵션을 바꾸지 않습니다.
-- 사용 방법 안내는 `placeholder`로 보여줍니다. 판사 캐릭터 + 말풍선(`JUDGE_GREETING`) + 안내(`CHAT_PLACEHOLDER`)를 `ui/layout.py`의 `CHAT_EMPTY_HTML`로 조립합니다. **`value`에 초기 메시지를 넣지 않습니다.** B가 초기화할 때 빈 리스트로 되돌리기 때문입니다.
+- 사용 방법 안내는 `placeholder`로 보여줍니다. 판사 캐릭터 + 말풍선(`JUDGE_GREETING`) + 안내(`CHAT_PLACEHOLDER`)를 `ui/layout.py`의 `chat_empty_html(t)`로 조립합니다. **`value`에 초기 메시지를 넣지 않습니다.** B가 초기화할 때 빈 리스트로 되돌리기 때문입니다.
 - 높이, 아바타, 복사 버튼 같은 **보이는 옵션**은 A가 자유롭게 정합니다.
 
 ## 6. key를 바꾸거나 추가하고 싶을 때
@@ -126,4 +143,6 @@ UI A는 **화면에 보이는 것**을 만들고, UI B는 **그 화면이 어떻
 - [ ] `python app.py`로 실행해서 화면이 뜬다
 - [ ] 화면에 실제 없는 기능(예: 계약서 업로드)을 안내하는 문구가 없다
 - [ ] 면책 고지와 ☎1350 안내가 항상 보인다
+- [ ] 글자 크기를 '가장 크게'로 바꿔도 PC·모바일 화면이 깨지지 않는다
+- [ ] 언어를 바꾸면 모든 화면 문구가 함께 바뀐다
 - [ ] PC 화면과 좁은 화면(768px 이하) 캡처를 PR 본문에 첨부했다

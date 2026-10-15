@@ -7,18 +7,23 @@ from pathlib import Path
 import gradio as gr
 
 from ui.content import (
-    APP_NAME,
-    CHAT_PLACEHOLDER,
+    ASK_BTN,
+    CLEAR_BTN,
+    DEFAULT_LANGUAGE,
     EXAMPLE_QUESTIONS,
     FAQ_ITEMS,
-    JUDGE_GREETING,
+    HOME_BTN,
+    LANGUAGES,
     MENU_ITEMS,
-    COMING_SOON,
     NOTICE,
     QUESTION_PLACEHOLDER,
     SOURCE_NOTE,
-    TAGLINE,
+    TAB_CHAT,
+    TAB_FAQ,
+    language_button_text,
+    localize,
 )
+from ui.font_size import build_font_size_control
 
 # 테마 — "판사봉 캐릭터" 톤: 가발 크림 배경, 법복 차콜 글자, 버건디 포인트 하나.
 # 색 근거는 docs/ui-tone-redesign-spec.md. Gradio 6에서는 app.py의 demo.launch(theme=...)로 적용합니다.
@@ -102,72 +107,111 @@ THEME = gr.themes.Base(
 # 답변 옆에 붙는 판사 얼굴. 로딩 중 전신 애니메이션은 style.css의 .judge-busy가 맡습니다.
 JUDGE_AVATAR = Path(__file__).parent / "assets" / "judge-avatar.webp"
 
-# 대화가 비어 있을 때: 판사 캐릭터가 말풍선으로 인사하고 아래에 사용 안내
-CHAT_EMPTY_HTML = f"""
+# 아래 HTML 조각은 언어를 바꿀 때 ui/events.py가 같은 함수로 다시 만들어 끼웁니다.
+# t는 ui/content.py의 localize(언어)가 돌려주는 문구 묶음입니다.
+
+
+def chat_empty_html(t):
+    """대화가 비어 있을 때: 판사 캐릭터가 말풍선으로 인사하고 아래에 사용 안내"""
+    return f"""
 <div class="judge-hero">
-  <p class="judge-hero-bubble">{JUDGE_GREETING}</p>
+  <p class="judge-hero-bubble">{t["judge_greeting"]}</p>
   <div class="judge-hero-figure" role="img" aria-label="판사 캐릭터"></div>
-  <p class="judge-hero-guide">{"<br>".join(CHAT_PLACEHOLDER)}</p>
+  <p class="judge-hero-guide">{"<br>".join(t["chat_placeholder"])}</p>
 </div>
 """
 
 
-# 홈 맨 위: 판사 캐릭터 + 서비스명 + 한 줄 소개
-HOME_HERO_HTML = f"""
+def home_hero_html(t):
+    """홈 맨 위: 판사 캐릭터 + 서비스명 + 한 줄 소개"""
+    return f"""
 <div class="home-hero">
   <div class="judge-figure" role="img" aria-label="판사 캐릭터"></div>
-  <h1>{APP_NAME}</h1>
-  <p>{TAGLINE}</p>
+  <h1>{t["app_name"]}</h1>
+  <p>{t["tagline"]}</p>
 </div>
 """
 
-# 아직 준비 중인 화면: 판사가 말풍선으로 안내
-COMING_SOON_HTML = f"""
+
+def coming_soon_html(t):
+    """아직 준비 중인 화면: 판사가 말풍선으로 안내"""
+    return f"""
 <div class="judge-hero coming-soon">
-  <p class="judge-hero-bubble">{COMING_SOON}</p>
+  <p class="judge-hero-bubble">{t["coming_soon"]}</p>
   <div class="judge-hero-figure" role="img" aria-label="판사 캐릭터"></div>
 </div>
 """
 
+
+_KO = localize(DEFAULT_LANGUAGE)
 MENU_LABELS = dict(MENU_ITEMS)
 
 
-def _screen_bar(title):
-    """각 화면 위쪽 바: 왼쪽 뒤로가기 아이콘 + 가운데 화면 이름. 버튼은 B가 이벤트를 걸도록 돌려줍니다."""
+def _screen_bar(key):
+    """각 화면 위쪽 바: 왼쪽 뒤로가기 아이콘 + 가운데 화면 이름.
+    (뒤로가기 버튼, 화면 이름, 면책 고지)를 돌려줍니다. 버튼은 B가 이벤트를, 글자는 언어 변경을 겁니다."""
     with gr.Row(elem_classes="screen-bar"):
         # 글자는 화면에서 숨기고 아이콘만 보입니다(style.css). 화면 낭독기는 이 글자를 읽습니다.
-        home_btn = gr.Button("홈으로", scale=0, min_width=44, elem_classes="home-btn")
-        gr.Markdown(f"## {title}", elem_classes="screen-title")
-    gr.Markdown(NOTICE, elem_classes="notice")
-    return home_btn
+        home_btn = gr.Button(HOME_BTN, scale=0, min_width=44, elem_classes="home-btn")
+        title = gr.Markdown(f"## {MENU_LABELS[key]}", elem_classes="screen-title")
+    notice = gr.Markdown(NOTICE, elem_classes="notice")
+    return home_btn, title, notice
+
+
+def _top_controls():
+    """모든 화면 맨 위 오른쪽: 지구본 언어 선택 + 글자 크기.
+    지구본 버튼을 누르면 그 아래로 언어 목록이 펼쳐집니다(이벤트는 ui/events.py).
+    글자 크기는 브라우저에서만 동작합니다(ui/font_size.py)."""
+    with gr.Column(elem_id="topbar"):
+        with gr.Row(elem_id="top-controls"):
+            lang_btn = gr.Button(
+                language_button_text(DEFAULT_LANGUAGE),
+                size="sm",
+                elem_id="lang-btn",
+            )
+            build_font_size_control()
+        language = gr.Radio(
+            choices=LANGUAGES,
+            value=DEFAULT_LANGUAGE,
+            show_label=False,
+            visible=False,
+            elem_id="language",
+        )
+    return lang_btn, language
 
 
 def build_layout():
+    lang_btn, language = _top_controls()
+
     # ───────── 홈 ─────────
     with gr.Column(visible=True, elem_id="screen-home") as home_screen:
-        gr.HTML(HOME_HERO_HTML, padding=False)
+        home_hero = gr.HTML(home_hero_html(_KO), padding=False)
         with gr.Column(elem_id="home-menu"):
             menu_btns = {
                 key: gr.Button(label, elem_id=f"menu-{key}", elem_classes="menu-btn")
                 for key, label in MENU_ITEMS
             }
-        gr.Markdown(NOTICE, elem_classes="notice")
+        home_notice = gr.Markdown(NOTICE, elem_classes="notice")
 
-    # ───────── 노동법 챗봇 (기존 탭 3개) ─────────
+    # ───────── 노동법 챗봇 (탭 2개) ─────────
     with gr.Column(visible=False, elem_id="screen-chat") as chat_screen:
-        chat_home_btn = _screen_bar(MENU_LABELS["chat"])
+        chat_bar = _screen_bar("chat")
         chat = _chat_tabs()
 
     # ───────── 준비 중인 화면 ─────────
     with gr.Column(visible=False, elem_id="screen-villain") as villain_screen:
-        villain_home_btn = _screen_bar(MENU_LABELS["villain"])
-        gr.HTML(COMING_SOON_HTML, padding=False)
+        villain_bar = _screen_bar("villain")
+        villain_soon = gr.HTML(coming_soon_html(_KO), padding=False)
 
     with gr.Column(visible=False, elem_id="screen-calc") as calc_screen:
-        calc_home_btn = _screen_bar(MENU_LABELS["calc"])
-        gr.HTML(COMING_SOON_HTML, padding=False)
+        calc_bar = _screen_bar("calc")
+        calc_soon = gr.HTML(coming_soon_html(_KO), padding=False)
 
-    # B가 이벤트를 걸 컴포넌트만 반환합니다. (docs/ui-layout-rules.md 4번 표)
+    bars = {"chat": chat_bar, "villain": villain_bar, "calc": calc_bar}
+    i18n = chat.pop("i18n")
+
+    # B가 이벤트를 걸 컴포넌트와, 언어 변경 시 글자를 바꿀 컴포넌트(i18n)를 함께 반환합니다.
+    # (docs/ui-layout-rules.md 4번 표)
     return {
         **chat,
         "screens": {
@@ -177,19 +221,29 @@ def build_layout():
             "calc": calc_screen,
         },
         "menu_btns": menu_btns,
-        "home_btns": [chat_home_btn, villain_home_btn, calc_home_btn],
+        "home_btns": [bar[0] for bar in bars.values()],
+        "language": language,
+        "lang_btn": lang_btn,
+        "i18n": {
+            **i18n,
+            "home_hero": home_hero,
+            # 화면 key → 그 화면 위쪽 바의 이름(Markdown)
+            "screen_titles": {key: bar[1] for key, bar in bars.items()},
+            "notices": [home_notice, *(bar[2] for bar in bars.values())],
+            "coming_soons": [villain_soon, calc_soon],
+        },
     }
 
 
 def _chat_tabs():
     """노동법 챗봇 화면의 탭 2개(질문하기·자주 묻는 질문). 채팅 컴포넌트를 dict로 돌려줍니다."""
     with gr.Tabs(elem_id="tabs"):
-        with gr.Tab("질문하기", id="chat", elem_id="tab-chat"):
+        with gr.Tab(TAB_CHAT, id="chat", elem_id="tab-chat") as tab_chat:
             chatbot = gr.Chatbot(
                 show_label=False,
                 height="56vh",
                 min_height=380,
-                placeholder=CHAT_EMPTY_HTML,
+                placeholder=chat_empty_html(_KO),
                 avatar_images=(None, JUDGE_AVATAR),
                 buttons=["copy"],
                 elem_id="chatbot",
@@ -207,15 +261,18 @@ def _chat_tabs():
                     elem_id="question",
                 )
                 ask_btn = gr.Button(
-                    "질문하기", variant="primary", scale=1, min_width=96, elem_id="ask-btn"
+                    ASK_BTN, variant="primary", scale=1, min_width=96, elem_id="ask-btn"
                 )
-            clear_btn = gr.Button("대화 지우기", size="sm", variant="secondary", elem_id="clear-btn")
+            clear_btn = gr.Button(CLEAR_BTN, size="sm", variant="secondary", elem_id="clear-btn")
 
-        with gr.Tab("자주 묻는 질문", id="faq", elem_id="tab-faq"):
+        with gr.Tab(TAB_FAQ, id="faq", elem_id="tab-faq") as tab_faq:
+            faq_accordions = []  # 질문(아코디언 라벨)
+            faq_answers = []  # 답변(Markdown)
             for q, a in FAQ_ITEMS:
-                with gr.Accordion(q, open=False, elem_classes="faq-item"):
-                    gr.Markdown(a)
-            gr.Markdown(SOURCE_NOTE, elem_classes="source-note")
+                with gr.Accordion(q, open=False, elem_classes="faq-item") as acc:
+                    faq_accordions.append(acc)
+                    faq_answers.append(gr.Markdown(a))
+            source_note = gr.Markdown(SOURCE_NOTE, elem_classes="source-note")
 
     return {
         "chatbot": chatbot,
@@ -223,4 +280,11 @@ def _chat_tabs():
         "ask_btn": ask_btn,
         "clear_btn": clear_btn,
         "example_btns": example_btns,
+        "i18n": {
+            "tab_chat": tab_chat,
+            "tab_faq": tab_faq,
+            "faq_accordions": faq_accordions,
+            "faq_answers": faq_answers,
+            "source_note": source_note,
+        },
     }
