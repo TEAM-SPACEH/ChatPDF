@@ -11,6 +11,8 @@ from langchain_chroma import Chroma
 from langchain_openai import OpenAIEmbeddings
 
 from rag.answer_chain import answer
+from rag.translate import translate
+from ui.content import DEFAULT_LANGUAGE
 
 try:
     # 로컬에서는 .env의 OPENAI_API_KEY를 읽습니다. (Spaces에서는 Secrets가 환경변수로 들어옵니다)
@@ -26,6 +28,8 @@ COLLECTION_NAME = "labor_laws"
 EMBEDDING_MODEL = "text-embedding-3-large"
 
 LOADING_TEXT = "⏳ 답변을 찾는 중..."
+TRANSLATING_Q_TEXT = "⏳ 질문을 번역하는 중..."
+TRANSLATING_TEXT = "⏳ 답변을 번역하는 중..."
 _API_KEY_PATTERN = re.compile(r"sk-[A-Za-z0-9_\-*]{4,}")
 
 # 앱 전체에서 한 번만 불러오는 벡터DB (사용자마다 새로 불러오지 않습니다)
@@ -73,7 +77,15 @@ def prepare_db():
         return _db
 
 
-def on_ask(question, history):
+def _full(gen):
+    """스트리밍 제너레이터에서 누적된 마지막(=전체) 텍스트만 받아옵니다."""
+    text = ""
+    for text in gen:
+        continue
+    return text
+
+
+def on_ask(question, history, language):
     question = (question or "").strip()
     if not question:
         raise gr.Error("질문을 입력하세요.")
@@ -82,19 +94,50 @@ def on_ask(question, history):
     if db is None:
         raise gr.Error(_db_error)
 
+    key = _openai_key()
+    target = language or DEFAULT_LANGUAGE
+    # 한국어를 고르면 번역 없이 기존 방식 그대로 동작합니다.
+    translating = target != "Korean"
+
     history = list(history or [])
+    user_idx = len(history)
     history.append({"role": "user", "content": question})
     history.append({"role": "assistant", "content": LOADING_TEXT})
     yield history, ""
 
-    try:
-        text = ""
-        for text in answer(question, _openai_key(), db):
-            if not text:
-                continue  # 첫 조각이 빈 문자열이면 로딩 문구를 유지합니다.
-            # answer()는 누적된 전체 텍스트를 돌려주므로 덮어씁니다.
-            history[-1] = {"role": "assistant", "content": text}
+    # 1. 질문을 한국어로 번역 (RAG는 한국어 문서로 검색/답변하므로)
+    rag_question = question
+    if translating:
+        history[-1] = {"role": "assistant", "content": TRANSLATING_Q_TEXT}
+        yield history, ""
+        try:
+            q_ko = _full(translate(question, "Korean", key)).strip()
+        except Exception as e:
+            history[-1] = {
+                "role": "assistant",
+                "content": f"⚠️ 질문 번역 중 오류가 발생했어요: {_mask_secret(str(e))}",
+            }
             yield history, ""
+            return
+        rag_question = q_ko or question
+        # 번역된 한국어 질문을 사용자 말풍선에 함께 보여줍니다.
+        history[user_idx] = {
+            "role": "user",
+            "content": f"{question}\n\n> 🇰🇷 {rag_question}",
+        }
+        history[-1] = {"role": "assistant", "content": LOADING_TEXT}
+        yield history, ""
+
+    # 2. RAG 답변 (한국어). 한국어 선택 시엔 바로 스트리밍으로 보여줍니다.
+    try:
+        ko_answer = ""
+        for ko_answer in answer(rag_question, key, db):
+            if not ko_answer:
+                continue  # 첫 조각이 빈 문자열이면 로딩 문구를 유지합니다.
+            if not translating:
+                # answer()는 누적된 전체 텍스트를 돌려주므로 덮어씁니다.
+                history[-1] = {"role": "assistant", "content": ko_answer}
+                yield history, ""
     except Exception as e:
         history[-1] = {
             "role": "assistant",
@@ -103,10 +146,39 @@ def on_ask(question, history):
         yield history, ""
         return
 
-    if not text:
+    if not ko_answer:
         history[-1] = {
             "role": "assistant",
             "content": "답변을 생성하지 못했어요. 질문을 바꿔서 다시 시도해 주세요.",
+        }
+        yield history, ""
+        return
+
+    if not translating:
+        return  # 한국어는 이미 스트리밍으로 출력했습니다.
+
+    # 3. 한국어 답변을 선택한 언어로 번역해 출력합니다.
+    history[-1] = {"role": "assistant", "content": TRANSLATING_TEXT}
+    yield history, ""
+    try:
+        text = ""
+        for text in translate(ko_answer, target, key):
+            if not text:
+                continue
+            history[-1] = {"role": "assistant", "content": text}
+            yield history, ""
+    except Exception as e:
+        history[-1] = {
+            "role": "assistant",
+            "content": f"⚠️ 답변 번역 중 오류가 발생했어요: {_mask_secret(str(e))}",
+        }
+        yield history, ""
+        return
+
+    if not text:
+        history[-1] = {
+            "role": "assistant",
+            "content": "번역하지 못했어요. 잠시 후 다시 시도해 주세요.",
         }
         yield history, ""
 

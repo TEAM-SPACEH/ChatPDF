@@ -304,6 +304,96 @@ html[data-font-size="xxl"] {
   font-weight: 600;
 }
 
+/* ───────────── 맨 위 언어 선택 (지구본 🌐) ───────────── */
+/* 제목 줄(#top-row) 오른쪽에 지구본 버튼과 글자 크기 선택을 나란히 둡니다.
+   지구본을 누르면 그 아래로 언어 목록이 펼쳐집니다. */
+#topbar {
+  position: relative;
+  flex: 0 0 auto !important;
+  width: auto !important;
+  min-width: 0 !important;
+  padding-top: 8px;
+  overflow: visible !important;
+}
+#top-controls {
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  overflow: visible !important;
+}
+#top-controls .font-size-control {
+  padding-top: 0;
+}
+/* 지구본 버튼은 옆의 글자 크기 버튼과 같은 모양으로 */
+#lang-btn {
+  flex: 0 0 auto !important;
+  width: auto !important;
+  min-width: 0 !important;
+  background: var(--block-background-fill) !important;
+  border: 1px solid var(--border-color-primary) !important;
+  border-radius: 12px !important;
+  color: var(--body-text-color) !important;
+  font-size: 0.92rem !important;
+  font-weight: 400 !important;
+  padding: 7px 14px !important;
+  white-space: nowrap;
+}
+#lang-btn:hover {
+  border-color: var(--color-accent) !important;
+}
+#lang-btn:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* 펼쳐지는 언어 목록 — 지구본 아래 오른쪽에 떠 있는 메뉴처럼 */
+/* Gradio 6의 gr.Radio는 fieldset이 아니라 .wrap(옵션 컨테이너) + label(각 옵션, 선택 시 .selected) 구조입니다. */
+#language {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 20;
+  width: max-content !important;
+  min-width: 150px;
+  max-width: 220px;
+  margin-top: 6px;
+  padding: 6px !important;
+  background: var(--block-background-fill) !important;
+  border: 1px solid var(--border-color-primary) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 24px rgba(27, 42, 65, 0.12);
+}
+/* 옵션들을 세로로 쌓습니다 (기본값은 flex-wrap: wrap 가로 배치라 덮어씁니다). */
+#language .wrap {
+  flex-direction: column !important;
+  flex-wrap: nowrap !important;
+  align-items: stretch !important;
+  gap: 2px !important;
+}
+/* 각 언어 옵션(label) */
+#language .wrap label {
+  width: 100%;
+  border: none !important;
+  border-radius: 8px !important;
+  padding: 8px 12px !important;
+  font-size: 0.9rem !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  transition: background-color 0.15s ease;
+}
+#language .wrap label:hover {
+  background: var(--color-accent-soft) !important;
+}
+/* 선택된 언어 — 형광펜 하이라이트 */
+#language .wrap label.selected {
+  background: var(--lg-mark) !important;
+}
+#language .wrap label:focus-within {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}
+
 /* 대화 지우기 — 버튼보다는 글자 링크처럼 */
 #clear-btn {
   max-width: 120px;
@@ -369,7 +459,8 @@ html[data-font-size="xxl"] {
 @media (prefers-reduced-motion: reduce) {
   .example-btn,
   .font-size-chevron,
-  #tabs button[role="tab"] {
+  #tabs button[role="tab"],
+  #language .wrap label {
     transition: none;
   }
 }
@@ -385,9 +476,16 @@ html[data-font-size="xxl"] {
   .font-size-control {
     padding-top: 0;
   }
-  .font-size-menu {
+  .font-size-menu,
+  #language {
     left: 0;
     right: auto;
+  }
+  #topbar {
+    padding-top: 0;
+  }
+  #top-controls {
+    justify-content: flex-start;
   }
   /* 탭 세 개가 한 줄에 들어가도록 좁은 화면에서는 탭 여백을 줄입니다. */
   #tabs button[role="tab"] {
