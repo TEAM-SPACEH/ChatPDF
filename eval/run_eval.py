@@ -27,7 +27,7 @@ QUESTION_COLUMNS = ["No", "유형", "질문", "정답 요약", "근거 조문", 
 TYPES = ["단순 사실", "비교·종합", "표현 변형", "문서에 없음"]
 UNKNOWN_TYPE = "문서에 없음"
 
-# answer()가 근거를 찾지 못했을 때 쓰는 문구 (rag/answer_chain.py, rag/prompts.py)
+# answer()가 근거를 찾지 못했을 때 첫 문장에 쓰는 문구 (rag/answer_chain.py, rag/prompts.py)
 UNKNOWN_PHRASES = ["확인되지 않습니다", "확인하지 못했습니다", "찾지 못했습니다"]
 
 # answer()가 마지막에 붙이는 출처 목록의 제목 (rag/answer_chain.py)
@@ -97,8 +97,14 @@ def parse_cited(text):
 
 
 def is_unknown_answer(text):
+    """첫 문장에서 '확인되지 않는다'고 했는지 봅니다.
+
+    답을 지어낸 뒤 끝에 '세부 사항은 확인되지 않습니다'를 붙인 경우를 모름 처리로 세지 않고,
+    답변 중간에 일부만 모른다고 한 경우를 지나친 거절로 세지 않기 위해서입니다.
+    """
     body, _ = split_answer(text)
-    return any(phrase in body for phrase in UNKNOWN_PHRASES)
+    first_line = body.strip().split("\n", 1)[0]
+    return any(phrase in first_line for phrase in UNKNOWN_PHRASES)
 
 
 def judge(row, answer_text):
