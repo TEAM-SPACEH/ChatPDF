@@ -38,4 +38,6 @@ with gr.Blocks(title=APP_NAME) as demo:
 
 if __name__ == "__main__":
     prepare_db()  # 첫 질문을 기다리지 않도록 시작할 때 문서 벡터DB를 미리 만듭니다.
-    demo.launch(theme=THEME, css_paths=[CSS_PATH, ARREARS_CSS_PATH])
+    # Hugging Face Spaces는 기본으로 SSR 모드라 style.css 선택자 앞에 ".gradio-container .contain"이 붙지 않아
+    # Gradio 기본 스타일에 밀립니다(면책 고지 배경이 사라지는 등). 로컬과 같은 화면이 나오도록 SSR을 끕니다.
+    demo.launch(theme=THEME, css_paths=[CSS_PATH, ARREARS_CSS_PATH], ssr_mode=False)

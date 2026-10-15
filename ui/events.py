@@ -15,6 +15,19 @@ _SCROLL_TOP_JS = "() => window.scrollTo({top: 0})"
 _APP_NAMES = {lang: t["app_name"] for lang, t in I18N.items()}
 _TITLE_JS = f"(lang) => {{ document.title = {json.dumps(_APP_NAMES, ensure_ascii=False)}[lang] || document.title; }}"
 
+# 언어를 바꾸는 동안 화면 가운데 오버레이(#lang-overlay, ui/layout.py)를 새 언어 문구로 띄우고, 다 바뀌면 닫습니다.
+_CHANGING = {lang: t["changing_language"] for lang, t in I18N.items()}
+_OVERLAY_SHOW_JS = f"""
+(lang) => {{
+  const box = document.querySelector("#lang-overlay");
+  if (!box) return;
+  const text = {json.dumps(_CHANGING, ensure_ascii=False)}[lang];
+  if (text) box.querySelector(".judge-loading-text").textContent = text;
+  box.classList.add("is-open");
+}}
+"""
+_OVERLAY_HIDE_JS = '() => document.querySelector("#lang-overlay")?.classList.remove("is-open")'
+
 
 def _show_screen(target, names):
     """target 화면만 보이게 하는 핸들러를 만듭니다. 채팅 기록은 숨겨질 뿐 그대로 남습니다."""
@@ -106,10 +119,13 @@ def bind_events(ui):
             *updates,
         ]
 
+    # 바뀌는 동안은 컴포넌트마다 뜨는 기본 로딩 표시(채팅창 아래 "..." 말풍선 등) 대신 가운데 오버레이 하나만 보여줍니다.
+    ui["language"].change(None, inputs=[ui["language"]], js=_OVERLAY_SHOW_JS)
     ui["language"].change(
         on_language_change,
         inputs=[ui["language"]],
         outputs=[lang_open, ui["language"], ui["lang_btn"], *text_targets],
+        show_progress="hidden",
     ).then(
         # 서버를 거치지 않는 부분(글자 크기 버튼·브라우저 탭 제목)은 브라우저에서 바꿉니다.
         None, inputs=[ui["language"]], js=FONT_SIZE_LANGUAGE_JS
@@ -118,4 +134,5 @@ def bind_events(ui):
         on_translate_history,
         inputs=[ui["chatbot"], ui["language"]],
         outputs=[ui["chatbot"]],
-    )
+        show_progress="hidden",
+    ).then(None, js=_OVERLAY_HIDE_JS)

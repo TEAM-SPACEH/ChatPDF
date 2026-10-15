@@ -150,6 +150,16 @@ def home_hero_html(t):
 """
 
 
+def judge_loading_html(text):
+    """불러오는 중: 판사봉 두드리는 판사 + 안내 문구 (언어 변경 오버레이, 사업주 조회에서 씀)"""
+    return f"""
+<div class="judge-loading" role="status" aria-live="polite">
+  <span class="judge-busy" aria-hidden="true"></span>
+  <p class="judge-loading-text">{text}</p>
+</div>
+"""
+
+
 def coming_soon_html(t):
     """아직 준비 중인 화면: 판사가 말풍선으로 안내"""
     return f"""
@@ -199,6 +209,8 @@ def _top_controls():
 
 def build_layout():
     lang_btn, language = _top_controls()
+    # 언어를 바꾸는 동안 화면 가운데에 뜨는 안내. 평소엔 숨겨 두고 ui/events.py의 JS가 열고 닫습니다(문구도 JS가 바꿈).
+    gr.HTML(judge_loading_html(_KO["changing_language"]), padding=False, elem_id="lang-overlay")
 
     # ───────── 홈 ─────────
     with gr.Column(visible=True, elem_id="screen-home") as home_screen:
@@ -218,7 +230,7 @@ def build_layout():
     # ───────── 임금체불 사업주 조회 (화면·이벤트는 ui/arrears_tab.py, 지금은 가상 데이터) ─────────
     with gr.Column(visible=False, elem_id="screen-villain") as villain_screen:
         villain_bar = _screen_bar("villain")
-        build_arrears_tab()
+        build_arrears_tab(judge_loading_html)
 
     # ───────── 최저임금 계산기 (화면·이벤트는 ui/wage_tab.py) ─────────
     with gr.Column(visible=False, elem_id="screen-calc") as calc_screen:

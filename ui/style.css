@@ -372,8 +372,12 @@ html[data-font-size="xxl"] {
 .home-btn {
   position: absolute !important;
   left: -6px; /* 아이콘 안쪽 여백만큼 당겨서 아래 내용과 왼쪽 선 맞춤 */
-  top: 50%;
-  transform: translateY(-50%);
+  /* 세로 가운데 — transform 대신 top·bottom·margin으로. Gradio 버튼은 누를 때 transform을 바꾸고
+     transition: all이 걸려 있어서, transform으로 세우면 누르는 순간 아래로 내려갑니다. */
+  top: 0;
+  bottom: 0;
+  margin: auto 0 !important;
+  transform: none !important;
   width: 44px !important;
   min-width: 44px !important;
   height: 44px;
@@ -384,7 +388,7 @@ html[data-font-size="xxl"] {
   box-shadow: none !important;
   color: var(--body-text-color) !important;
   font-size: 0 !important;
-  transition: background-color 0.15s ease;
+  transition: background-color 0.15s ease !important;
   z-index: 1; /* 가운데 제목 영역보다 위에 */
 }
 /* 왼쪽 꺾쇠 아이콘. mask로 그려서 글자색(currentColor)을 따라가므로 다크 모드에서도 자동으로 맞음 */
@@ -420,7 +424,7 @@ html[data-font-size="xxl"] {
   margin: 8px 0 !important;
   padding: 10px 14px !important;
   border-radius: 12px !important;
-  background: var(--color-accent-soft);
+  background: var(--color-accent-soft) !important; /* Gradio 블록 기본 배경(투명)에 밀리지 않게 */
   font-size: 0.86rem;
   color: var(--body-text-color-subdued);
 }
@@ -428,7 +432,7 @@ html[data-font-size="xxl"] {
 .notice .notice {
   margin: 0 !important;
   padding: 0 !important;
-  background: none;
+  background: none !important;
 }
 .notice p {
   margin: 0;
@@ -555,6 +559,63 @@ html[data-font-size="xxl"] {
   }
 }
 
+/* 불러오는 중 — 판사봉 두드리는 판사 + 안내 문구를 가운데에 (ui/layout.py의 judge_loading_html).
+   사업주 조회 결과 자리, 언어 변경 오버레이에서 씁니다. */
+.judge-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 40px 0;
+  text-align: center;
+}
+.judge-loading .judge-busy {
+  --w: 88px;
+  margin: 0;
+}
+.judge-loading-text {
+  margin: 0;
+  font-weight: 600;
+  color: var(--body-text-color);
+}
+.judge-loading-text::after {
+  content: "";
+  display: inline-block;
+  width: 1.2em;
+  text-align: left;
+  animation: judge-loading-dots 1.2s steps(4, jump-none) infinite;
+}
+@keyframes judge-loading-dots {
+  0% { content: ""; }
+  33% { content: "."; }
+  66% { content: ".."; }
+  100% { content: "..."; }
+}
+
+/* 언어 변경 오버레이 — 평소엔 숨기고, events.py의 JS가 is-open을 붙이면 화면 전체를 덮고 가운데에 안내 */
+#lang-overlay {
+  position: fixed !important;
+  inset: 0;
+  z-index: 1000;
+  display: none !important;
+  align-items: center;
+  justify-content: center;
+  margin: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: color-mix(in srgb, var(--body-background-fill) 72%, transparent) !important;
+  backdrop-filter: blur(2px);
+}
+#lang-overlay.is-open {
+  display: flex !important;
+}
+#lang-overlay .judge-loading {
+  padding: 24px 32px;
+  border: 1px solid var(--border-color-primary);
+  border-radius: 18px;
+  background: var(--block-background-fill);
+}
+
 /* 대화가 비어 있을 때 — 판사가 가운데 서서 말풍선으로 인사 (placeholder) */
 .judge-hero {
   display: flex;
@@ -673,10 +734,22 @@ html[data-font-size="xxl"] {
   font-weight: 600;
 }
 
-/* 대화 지우기 — 버튼보다는 글자 링크처럼 */
+/* 대화 지우기 — 버튼보다는 글자 링크처럼, "질문하기 / 자주 묻는 질문" 탭 줄의 맨 오른쪽에.
+   버튼은 질문하기 탭 안에 있어서 다른 탭을 고르면 함께 숨겨집니다.
+   탭 내용 상자(#tab-chat, 그 안 column)의 position을 풀어 #tabs(relative)를 기준으로 위치를 잡습니다. */
+#tab-chat,
+#tab-chat > .column {
+  position: static !important;
+}
 #clear-btn {
+  position: absolute !important;
+  top: -4px; /* 탭 글자(.tab-wrapper보다 4px 위에 있음)와 같은 줄 */
+  right: 0;
+  height: 32px; /* 탭 버튼 높이 */
+  width: auto !important;
+  min-width: 0 !important;
   max-width: 120px;
-  margin-left: auto;
+  padding: 0 4px !important;
   background: transparent !important;
   border: none !important;
   color: var(--body-text-color-subdued) !important;
@@ -731,12 +804,15 @@ html[data-font-size="xxl"] {
     transition: none;
   }
   .judge-busy,
-  .judge-hero-figure {
+  .judge-hero-figure,
+  .judge-loading-text::after {
     animation: none;
   }
-  .menu-btn,
-  .home-btn {
+  .menu-btn {
     transition: none;
+  }
+  .home-btn {
+    transition: none !important;
   }
   .menu-btn:hover {
     transform: none;
@@ -927,9 +1003,6 @@ html[data-font-size="xxl"] {
     min-width: 0 !important;
     padding: 0 16px !important;
     white-space: nowrap; /* "질문하기"가 두 줄로 나뉘지 않게 */
-  }
-  #clear-btn {
-    margin-top: -4px;
   }
 }
 
