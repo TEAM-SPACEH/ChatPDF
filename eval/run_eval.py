@@ -164,7 +164,12 @@ def _sec(value):
     return "-" if value is None else f"{value:.1f}초"
 
 
-def summary_markdown(stats, label):
+def failure_rows(rows):
+    """사람 채점이 ❌ 또는 △인 질문 (실패 사례 분석용)."""
+    return [r for r in rows if r.get("정답 채점", "").strip() in ("❌", "△")]
+
+
+def summary_markdown(stats, label, rows=()):
     acc, acc_n = stats["정답률"]
     match, match_n = stats["근거 일치율"]
     unknown, unknown_n = stats["모름 처리율"]
@@ -203,10 +208,19 @@ def summary_markdown(stats, label):
         "",
         "## 실패 사례 분석",
         "",
-        "| No | 질문 | 잘못된 답변 | 원인 추정 | 해결 시도 |",
-        "| --- | --- | --- | --- | --- |",
-        "| | | | | |",
+        "채점이 ❌·△인 질문입니다. 원인은 results.csv의 '비고'에서 가져옵니다.",
+        "",
+        "| No | 채점 | 질문 | 답변 요약 | 원인 추정 | 해결 시도 |",
+        "| --- | --- | --- | --- | --- | --- |",
     ]
+    failures = failure_rows(rows)
+    for r in failures:
+        body = " ".join(split_answer(r.get("답변", ""))[0].split())
+        short = body[:80] + ("…" if len(body) > 80 else "")
+        cell = lambda v: str(v).replace("|", "/").replace("\n", " ")
+        lines.append(f"| {r['No']} | {r['정답 채점']} | {cell(r['질문'])} | {cell(short)} | {cell(r.get('비고', ''))} | |")
+    if not failures:
+        lines.append("| | | | | | |")
     if acc is None:
         lines += ["", "> 정답률은 `results.csv`의 '정답 채점' 칸(✅/△/❌)을 채운 뒤 "
                       "`python eval/run_eval.py --summarize <results.csv>`로 다시 계산합니다."]
@@ -303,7 +317,7 @@ def run(questions, label):
         print(f"    {total:.1f}초 · 근거 일치 {match} · 모름 처리 {unknown}" + (f" · 오류 {error}" if error else ""))
 
     write_results(rows, out_dir / "results.csv")
-    (out_dir / "summary.md").write_text(summary_markdown(summarize(rows), label), encoding="utf-8")
+    (out_dir / "summary.md").write_text(summary_markdown(summarize(rows), label, rows), encoding="utf-8")
     print(f"\n결과: {out_dir}")
     print((out_dir / "summary.md").read_text(encoding="utf-8"))
 
@@ -320,7 +334,7 @@ def resummarize(path):
     with open(path, encoding="utf-8-sig", newline="") as f:
         rows = list(csv.DictReader(f))
     label = path.parent.name
-    text = summary_markdown(summarize(rows), label)
+    text = summary_markdown(summarize(rows), label, rows)
     (path.parent / "summary.md").write_text(text, encoding="utf-8")
     print(text)
 

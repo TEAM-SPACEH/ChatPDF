@@ -102,6 +102,12 @@ class SummaryTest(unittest.TestCase):
         self.assertEqual(s["유형별 점수"]["비교·종합"], (0.5, 1, 1))
         self.assertEqual(s["유형별 점수"]["문서에 없음"], (1.0, 1, 2))
 
+    def test_markdown_lists_failures(self):
+        rows = [dict(r, No=str(i), 질문=f"질문{i}", 답변="틀린 답 | 내용", 비고="검색 실패") for i, r in enumerate(self.ROWS, 1)]
+        text = run_eval.summary_markdown(run_eval.summarize(rows), "test", rows)
+        self.assertIn("| 2 | △ | 질문2 | 틀린 답 / 내용 | 검색 실패 | |", text)
+        self.assertNotIn("| 1 | ✅", text)
+
     def test_markdown_marks_unmeasured_accuracy(self):
         rows = [dict(r, **{"정답 채점": ""}) for r in self.ROWS]
         text = run_eval.summary_markdown(run_eval.summarize(rows), "test")
