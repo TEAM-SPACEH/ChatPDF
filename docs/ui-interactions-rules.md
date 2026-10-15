@@ -7,7 +7,7 @@ B는 A가 넘겨주는 컴포넌트 dict와 RAG 담당의 함수 사이를 잇�
 > 📌 **기능 명세 (변경):** 사용자가 채팅으로 노동관련법을 질문하면 RAG로 답하는 챗봇입니다. PDF 업로드·API 키 입력 화면은 **없습니다.**
 > 벡터DB는 RAG 담당의 `preprocessing.py`가 미리 만들어 둔 `chroma_db/`(컬렉션 `labor_laws`)를 앱 시작 시 한 번 불러와 쓰고, API 키는 `.env`(Spaces에서는 Secrets)의 `OPENAI_API_KEY`를 씁니다.
 
-> A 쪽 규칙은 `feature/chat-layout` 브랜치의 `docs/ui-layout-rules.md`에 있습니다. 두 문서의 key 목록은 항상 같아야 합니다.
+> A 쪽 규칙은 `docs/ui-layout-rules.md`에 있습니다. 두 문서의 key 목록은 항상 같아야 합니다.
 
 ## 1. 담당 범위
 
