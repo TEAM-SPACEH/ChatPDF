@@ -12,6 +12,7 @@ from ui.layout import THEME, build_layout
 load_dotenv()
 
 CSS_PATH = Path(__file__).parent / "ui" / "style.css"
+ARREARS_CSS_PATH = Path(__file__).parent / "ui" / "arrears.css"  # 임금체불 사업주 조회 화면 전용
 ASSETS_DIR = Path(__file__).parent / "ui" / "assets"
 
 # 캐릭터 스프라이트처럼 CSS에서 불러오는 이미지를 브라우저에 공개합니다.
@@ -23,4 +24,4 @@ with gr.Blocks(title=APP_NAME) as demo:
 
 if __name__ == "__main__":
     prepare_db()  # 첫 질문을 기다리지 않도록 시작할 때 문서 벡터DB를 미리 만듭니다.
-    demo.launch(theme=THEME, css_paths=[CSS_PATH])
+    demo.launch(theme=THEME, css_paths=[CSS_PATH, ARREARS_CSS_PATH])

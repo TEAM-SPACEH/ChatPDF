@@ -25,6 +25,7 @@ from ui.content import (
     localize,
 )
 from ui.font_size import build_font_size_control
+from ui.arrears_tab import build_arrears_tab
 from ui.wage_tab import build_wage_tab
 
 # 테마 — "판사봉 캐릭터" 톤: 가발 크림 배경, 법복 차콜 글자, 버건디 포인트 하나.
@@ -214,10 +215,10 @@ def build_layout():
         chat_bar = _screen_bar("chat")
         chat = _chat_tabs()
 
-    # ───────── 준비 중인 화면 ─────────
+    # ───────── 임금체불 사업주 조회 (화면·이벤트는 ui/arrears_tab.py, 지금은 가상 데이터) ─────────
     with gr.Column(visible=False, elem_id="screen-villain") as villain_screen:
         villain_bar = _screen_bar("villain")
-        villain_soon = gr.HTML(coming_soon_html(_KO), padding=False)
+        build_arrears_tab()
 
     # ───────── 최저임금 계산기 (화면·이벤트는 ui/wage_tab.py) ─────────
     with gr.Column(visible=False, elem_id="screen-calc") as calc_screen:
@@ -247,7 +248,7 @@ def build_layout():
             # 화면 key → 그 화면 위쪽 바의 이름(Markdown)
             "screen_titles": {key: bar[1] for key, bar in bars.items()},
             "notices": [home_notice, *(bar[2] for bar in bars.values())],
-            "coming_soons": [villain_soon],
+            "coming_soons": [],  # 준비 중 화면이 없어졌습니다(악덕 사업주 → 조회 화면)
         },
     }
 
