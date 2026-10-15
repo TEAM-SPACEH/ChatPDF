@@ -769,3 +769,29 @@ html[data-font-size="xxl"] {
     min-width: 72px !important;
   }
 }
+
+/* ───────────── 최저임금 계산기 — 결과 모달 (ui/wage_tab.py) ───────────── */
+#wage-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+#wage-modal-box {
+  background: var(--background-fill-primary);
+  border-radius: 12px;
+  padding: 24px;
+  width: 100%;
+  max-width: 560px;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+}
+#wage-modal-box .prose {
+  font-size: 1.05rem;
+  line-height: 1.7;
+}
