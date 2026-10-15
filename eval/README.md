@@ -9,6 +9,7 @@ README의 목표 지표 4가지(정답률·근거 일치율·모름 처리율·�
 | --- | --- |
 | `questions.csv` | 평가 질문 30개와 정답 요약·근거 조문·근거 페이지 |
 | `holdout.csv` | **새 질문 10개** — 개선 작업 중에는 보지 않고, 개선이 평가셋에만 맞춘 것인지 확인할 때만 씀 |
+| `questions_form.csv` · `holdout_form.csv` | **수업 제출 양식**(No·질문·정답 (요약)·근거 페이지·질문 유형·개선 전·개선 후·출처 일치·비고). `export_form.py`로 결과 폴더에서 만듦 |
 | `run_eval.py` | 질문셋을 돌려 답변·출처·응답 시간을 저장하고 지표를 계산 |
 | `test_run_eval.py` | 판정·지표 계산 로직 테스트 (API 호출 없음) |
 | `results/<시각>-<이름>/` | 실행 결과. `results.csv`(질문별 답변·인용 조문·실제 검색 질문·판정)와 `summary.md`(지표 요약) |
@@ -35,6 +36,9 @@ python eval/run_eval.py --label v3 --only 1,7,27   # 일부 질문만
 
 # 3. results.csv의 '정답 채점' 칸을 채운 뒤 지표 다시 계산
 python eval/run_eval.py --summarize eval/results/<폴더>/results.csv
+
+# 수업 제출 양식 CSV 만들기 (개선 전·후 결과 폴더 지정)
+python eval/export_form.py --before eval/results/<개선 전> --after eval/results/<개선 후>
 
 # 판정 로직 테스트
 python -m unittest eval/test_run_eval.py -v
