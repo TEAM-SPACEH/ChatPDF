@@ -41,9 +41,13 @@
 
 /* ───────────── 맨 위 오른쪽 — 지구본 언어 선택 + 글자 크기 (모든 화면 공통) ───────────── */
 /* 지구본을 누르면 그 아래로 언어 목록이 펼쳐집니다(ui/events.py). 글자 크기는 ui/font_size.py. */
+/* #topbar는 버튼 두 개 폭만큼만 차지하고 오른쪽에 붙습니다. 그래야 아래 #language의 left: 0이
+   지구본 버튼 왼쪽 끝이 됩니다. */
 #topbar {
   position: relative;
-  align-items: flex-end;
+  align-self: flex-end;
+  width: auto !important;
+  min-width: 0 !important;
   overflow: visible !important;
   z-index: 20;
 }
@@ -191,7 +195,10 @@
 }
 
 /* 언어 목록 — Gradio 6의 gr.Radio는 .wrap(옵션 컨테이너) + label(각 옵션, 선택 시 .selected) 구조 */
+/* 지구본 버튼(#top-controls의 왼쪽 항목) 바로 아래로 내려오도록 왼쪽 기준 정렬 */
 #language {
+  left: 0;
+  right: auto;
   width: max-content !important;
   min-width: 150px;
   max-width: 220px;
