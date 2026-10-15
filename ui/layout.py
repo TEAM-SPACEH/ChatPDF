@@ -15,6 +15,7 @@ from ui.content import (
     SOURCE_NOTE,
     TAGLINE,
 )
+from ui.font_size import build_font_size_control
 
 # 테마 — "계약서를 형광펜으로 검토하는" 느낌: 흰 종이, 남색 잉크, 노란 형광펜(style.css).
 # Gradio 6에서는 app.py의 demo.launch(theme=...)로 적용합니다.
@@ -62,7 +63,9 @@ THEME = gr.themes.Base(
 
 
 def build_layout():
-    gr.Markdown(f"# {APP_NAME}\n{TAGLINE}", elem_id="app-header")
+    with gr.Row(elem_id="top-row"):
+        gr.Markdown(f"# {APP_NAME}\n{TAGLINE}", elem_id="app-header", min_width=260)
+        build_font_size_control()
     gr.Markdown(NOTICE, elem_id="notice")
 
     with gr.Tabs(elem_id="tabs"):
