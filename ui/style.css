@@ -1,78 +1,211 @@
 /* UI A — 화면 스타일 (app.py에서 demo.launch(css_paths=...)로 적용) */
+/* 콘셉트: 계약서를 형광펜으로 검토하는 느낌. 흰 종이 + 남색 잉크 + 노란 형광펜 하나.
+   기본 색은 ui/layout.py의 THEME에 있고, 여기서는 Gradio 테마 변수(var(--...))로 가져다 씁니다. */
+/* 글꼴은 전부 Pretendard. Google Fonts에 없어서 jsDelivr에서 불러옵니다. */
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css");
 
-/* 전체 폭 제한 — 넓은 화면에서 너무 퍼지지 않게 */
+:root {
+  --lg-mark: #ffe45c; /* 형광펜 */
+  --lg-tab-idle: #98a2b3; /* 고르지 않은 탭 글자 */
+}
+.dark {
+  --lg-mark: rgba(255, 228, 92, 0.32);
+  --lg-tab-idle: #6b7689;
+}
+
+/* 한 줄이 80자를 넘지 않도록 폭을 좁게. width를 고정해야 탭을 바꿀 때 폭이 들쭉날쭉하지 않습니다. */
 .gradio-container {
-  max-width: 860px !important;
+  width: 100% !important;
+  max-width: 760px !important;
   margin: 0 auto !important;
+  padding-top: 40px !important;
 }
 
+/* ───────────── 상단: 서비스명·소개 ───────────── */
 #app-header h1 {
-  text-align: center;
-  margin-bottom: 0.2em;
+  display: inline;
+  font-size: 2.75rem;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.35;
+  color: var(--body-text-color);
+  /* 제목 아래쪽 절반에 형광펜을 그은 것처럼 */
+  background: linear-gradient(transparent 52%, var(--lg-mark) 52%, var(--lg-mark) 92%, transparent 92%);
+  padding: 0 0.12em;
+  margin-left: -0.12em;
+}
+#app-header p {
+  margin: 10px 0 0;
+  font-size: 1.05rem;
+  color: var(--body-text-color-subdued);
 }
 
-/* ───────────── 홈 화면 ───────────── */
-#home-intro {
-  text-align: center;
-  margin: 10px 0 24px;
-}
-
-/* 홈 메뉴 버튼(카드) — 세로로 크게 */
-#home-menu {
-  max-width: 460px;
-  margin: 0 auto;
-  gap: 14px;
-}
-.nav-card button,
-button.nav-card {
-  width: 100%;
-  min-height: 72px !important;
-  font-size: 1.15rem !important;
-  font-weight: 600;
-  border-radius: 14px !important;
-}
-
-/* ───────────── 공통: 홈으로 돌아가기 ───────────── */
-.back-btn {
-  max-width: 120px;
+/* ───────────── 면책 고지 — 각주처럼 조용하게, 하지만 항상 보이게 ───────────── */
+#notice {
+  border-radius: 0 !important;
   margin-bottom: 8px;
+  padding-left: 12px;
+  border-left: 2px solid var(--border-color-primary);
+  font-size: 0.86rem;
+  color: var(--body-text-color-subdued);
+}
+#notice strong {
+  color: var(--body-text-color);
 }
 
-/* 자주 묻는 Q&A — 아코디언 간격 */
+/* ───────────── 탭 ───────────── */
+/* 고르지 않은 탭은 흐리게, 고른 탭은 진한 글자 + 굵은 잉크 밑줄로 확실히 구분 */
+#tabs button[role="tab"] {
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: var(--lg-tab-idle) !important;
+  padding: 10px 2px !important;
+  margin-right: 24px;
+  border-radius: 0 !important;
+}
+#tabs button[role="tab"]:hover {
+  color: var(--body-text-color) !important;
+}
+#tabs button[role="tab"][aria-selected="true"] {
+  color: var(--body-text-color) !important;
+  font-weight: 700;
+  box-shadow: inset 0 -3px 0 var(--color-accent);
+}
+
+/* ───────────── 질문하기 탭 ───────────── */
+#chatbot {
+  background: var(--block-background-fill);
+  border: 1px solid var(--border-color-primary);
+  border-radius: 16px;
+  padding: 0 14px;
+}
+#chatbot h3 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+/* 추천 질문 — 테두리만 있는 알약. 마우스를 올리면 형광펜이 칠해집니다. */
+#example-row {
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+.example-btn {
+  flex: 0 1 auto !important;
+  min-width: 0 !important;
+  background: transparent !important;
+  border: 1px solid var(--border-color-primary) !important;
+  color: var(--body-text-color) !important;
+  font-size: 0.86rem !important;
+  font-weight: 400 !important;
+  padding: 6px 14px !important;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+.example-btn:hover {
+  background: var(--lg-mark) !important;
+  border-color: var(--lg-mark) !important;
+}
+
+#input-row {
+  align-items: stretch;
+  gap: 8px;
+}
+/* 입력창은 바깥 상자 없이 입력칸 하나만 보이게 */
+#question {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+}
+#question textarea {
+  font-size: 1rem;
+  padding: 14px 16px;
+}
+#ask-btn {
+  font-weight: 600;
+}
+
+/* 대화 지우기 — 버튼보다는 글자 링크처럼 */
+#clear-btn {
+  max-width: 120px;
+  margin-left: auto;
+  background: transparent !important;
+  border: none !important;
+  color: var(--body-text-color-subdued) !important;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+#clear-btn:hover {
+  color: var(--body-text-color) !important;
+}
+
+/* 키보드로 이동할 때 어디에 있는지 보이게 */
+#tabs button:focus-visible,
+.example-btn:focus-visible,
+#ask-btn:focus-visible,
+#clear-btn:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* ───────────── 자주 묻는 질문 탭 — 카드 대신 줄로 구분 ───────────── */
 .faq-item {
-  margin-bottom: 6px;
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 1px solid var(--border-color-primary) !important;
+  border-radius: 0 !important;
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
+}
+.faq-item p {
+  line-height: 1.75;
+  color: var(--body-text-color);
 }
 
-/* 근로기준법 요약집 — 읽기 좋은 간격 */
+/* ───────────── 법령 요약 탭 — 조문집처럼 ───────────── */
 #labor-law {
-  line-height: 1.7;
+  line-height: 1.8;
 }
 #labor-law h3 {
-  margin-top: 1.2em;
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-top: 1.8em;
+  margin-bottom: 0.3em;
+}
+#labor-law blockquote {
+  border-left: 2px solid var(--border-color-primary);
+  color: var(--body-text-color-subdued);
+  font-size: 0.92rem;
 }
 
-/* 챗봇 화면 — 설정 영역 */
-#chat-settings {
-  gap: 12px;
+.source-note {
+  margin-top: 20px;
+  font-size: 0.82rem;
+  color: var(--body-text-color-subdued);
 }
 
-#footer {
-  margin-top: 18px;
-  text-align: center;
-  opacity: 0.7;
+@media (prefers-reduced-motion: reduce) {
+  .example-btn {
+    transition: none;
+  }
 }
 
 /* 반응형: 좁은 화면(768px 이하)에서는 세로로 한 줄씩 쌓기 */
 @media (max-width: 768px) {
   .gradio-container {
-    max-width: 100% !important;
+    padding-top: 20px !important;
   }
-  #chat-settings {
+  #app-header h1 {
+    font-size: 2.2rem;
+  }
+  #tabs button[role="tab"] {
+    margin-right: 14px;
+  }
+  .example-btn {
+    flex: 1 1 100% !important;
+    text-align: left;
+  }
+  #input-row {
     flex-direction: column;
-  }
-  .nav-card button,
-  button.nav-card {
-    min-height: 60px !important;
-    font-size: 1.05rem !important;
   }
 }
