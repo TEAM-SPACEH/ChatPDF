@@ -1,9 +1,12 @@
 from langchain.retrievers.multi_query import MultiQueryRetriever
 from langchain_core.output_parsers import StrOutputParser
 from langchain_openai import ChatOpenAI
+from sqlalchemy import text
 
 from rag.prompts import get_labor_law_prompt
 from rag.source_formatter import format_sources
+
+from rag.evidence_selector import select_evidence
 
 
 def answer(question, openai_key, db):
@@ -26,8 +29,9 @@ def answer(question, openai_key, db):
 
     # 3. 관련 법률 문서 검색
     retriever = MultiQueryRetriever.from_llm(
-        retriever=db.as_retriever(search_kwargs={"k": 4}),
-        llm=llm
+        retriever=db.as_retriever(search_kwargs={"k": 6}),
+        llm=llm,
+        include_original=True
     )
 
     # 검색된 원본 Document 보관 (메타데이터 포함)
@@ -37,9 +41,20 @@ def answer(question, openai_key, db):
         yield "관련 법률 문서를 찾지 못했습니다."
         return
 
-    # 4. 검색된 문서 내용 정리
+    # 질문과 직접 관련된 법률 근거 선별
+    selected_docs = select_evidence(question, docs, llm)
+
+    if not selected_docs:
+        yield "제공된 법률 문서에서 질문에 적용할 근거를 확인하지 못했습니다."
+        return
+
+    # 선별된 법률 근거만 LLM에 전달
     context = "\n\n".join(
-        doc.page_content for doc in docs
+        f"법률명: {doc.metadata.get('law_name', '미확인')}\n"
+        f"조항: {doc.metadata.get('article_no', '미확인')}\n"
+        f"조항 제목: {doc.metadata.get('article_title', '')}\n"
+        f"법률 내용:\n{doc.page_content}"
+        for doc in selected_docs
     )
 
     # 5. 노동법 특화 프롬프트
@@ -63,6 +78,5 @@ def answer(question, openai_key, db):
         yield text
 
     # 8. 검색된 참고 문서 출처 표시
-    sources = format_sources(docs)
-
-    yield f"{text}\n\n---\n**검색된 참고 문서**\n{sources}"
+    sources = format_sources(selected_docs)
+    yield f"{text}\n\n---\n**선별된 참고 조항**\n{sources}"
