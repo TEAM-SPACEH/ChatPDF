@@ -12,6 +12,7 @@
 
 import argparse
 import csv
+import logging
 import sys
 import time
 from datetime import datetime
@@ -38,7 +39,7 @@ TARGETS = {"정답률": 0.80, "근거 일치율": 0.90, "모름 처리율": 1.00
 GRADE_SCORES = {"✅": 1.0, "△": 0.5, "❌": 0.0}
 
 RESULT_COLUMNS = [
-    "No", "유형", "질문", "정답 요약", "근거 조문", "답변", "인용 조문",
+    "No", "유형", "질문", "정답 요약", "근거 조문", "답변", "인용 조문", "검색 질문",
     "근거 일치", "모름 처리", "첫 글자(초)", "전체(초)", "오류", "정답 채점", "비고",
 ]
 
@@ -229,6 +230,32 @@ def summary_markdown(stats, label, rows=()):
 
 # ───────────────────────────── 실행 ─────────────────────────────
 
+class QueryCapture(logging.Handler):
+    """질문 확장(MultiQueryRetriever)이 로그로 남기는 검색 질문을 받아 둡니다."""
+
+    LOGGER = "langchain.retrievers.multi_query"
+
+    def __init__(self):
+        super().__init__(level=logging.INFO)
+        self.queries = []
+
+    def emit(self, record):
+        if record.getMessage().startswith("Generated queries") and record.args:
+            self.queries = [str(q).strip() for q in record.args[0] if str(q).strip()]
+
+    def __enter__(self):
+        logger = logging.getLogger(self.LOGGER)
+        self._old_level = logger.level
+        logger.setLevel(logging.INFO)
+        logger.addHandler(self)
+        return self
+
+    def __exit__(self, *exc):
+        logger = logging.getLogger(self.LOGGER)
+        logger.removeHandler(self)
+        logger.setLevel(self._old_level)
+
+
 def dry_run(questions):
     """API 호출 없이 질문셋을 검사합니다. 근거 조문이 실제 DB 조각에 있는지도 확인합니다."""
     from collections import Counter
@@ -298,18 +325,20 @@ def run(questions, label):
         print(f"[{i}/{len(questions)}] #{q['No']} {q['질문']}")
         text, error, first_at = "", "", None
         start = time.perf_counter()
-        try:
-            for text in answer(q["질문"], key, db):
-                if first_at is None and text:
-                    first_at = time.perf_counter() - start
-        except Exception as e:  # 한 질문이 실패해도 나머지는 계속 측정합니다.
-            error = f"{type(e).__name__}: {e}"
+        with QueryCapture() as capture:
+            try:
+                for text in answer(q["질문"], key, db):
+                    if first_at is None and text:
+                        first_at = time.perf_counter() - start
+            except Exception as e:  # 한 질문이 실패해도 나머지는 계속 측정합니다.
+                error = f"{type(e).__name__}: {e}"
         total = time.perf_counter() - start
 
         match, unknown, cited = judge(q, text) if not error else ("X", "X", "")
         rows.append({
             "No": q["No"], "유형": q["유형"], "질문": q["질문"], "정답 요약": q["정답 요약"],
             "근거 조문": q["근거 조문"], "답변": text, "인용 조문": cited,
+            "검색 질문": " | ".join(capture.queries),
             "근거 일치": match, "모름 처리": unknown,
             "첫 글자(초)": f"{first_at:.2f}" if first_at is not None else "",
             "전체(초)": f"{total:.2f}", "오류": error, "정답 채점": "", "비고": q.get("비고", ""),

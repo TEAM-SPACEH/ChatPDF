@@ -115,6 +115,14 @@ class SummaryTest(unittest.TestCase):
         self.assertIn("--summarize", text)
 
 
+class QueryCaptureTest(unittest.TestCase):
+    def test_captures_generated_queries_log(self):
+        import logging
+        with run_eval.QueryCapture() as capture:
+            logging.getLogger(run_eval.QueryCapture.LOGGER).info("Generated queries: %s", ["유급휴일 요건", " ", "적용 제외"])
+        self.assertEqual(capture.queries, ["유급휴일 요건", "적용 제외"])
+
+
 class QuestionSetTest(unittest.TestCase):
     def test_question_set_shape(self):
         questions = run_eval.load_questions()
