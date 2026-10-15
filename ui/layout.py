@@ -23,6 +23,7 @@ from ui.content import (
     TAGLINE,
     language_button_text,
 )
+from ui.font_size import build_font_size_control
 
 # 테마 — "계약서를 형광펜으로 검토하는" 느낌: 흰 종이, 남색 잉크, 노란 형광펜(style.css).
 # Gradio 6에서는 app.py의 demo.launch(theme=...)로 적용합니다.
@@ -70,22 +71,26 @@ THEME = gr.themes.Base(
 
 
 def build_layout():
-    # 맨 위: 지구본 버튼(🌐) — 누르면 아래 언어 목록이 펼쳐집니다. (이벤트는 ui/events.py)
-    with gr.Column(elem_id="topbar"):
-        lang_btn = gr.Button(
-            language_button_text(DEFAULT_LANGUAGE),
-            size="sm",
-            elem_id="lang-btn",
-        )
-        language = gr.Radio(
-            choices=LANGUAGES,
-            value=DEFAULT_LANGUAGE,
-            show_label=False,
-            visible=False,
-            elem_id="language",
-        )
-
-    header_md = gr.Markdown(f"# {APP_NAME}\n{TAGLINE}", elem_id="app-header")
+    # 맨 위 한 줄: 왼쪽은 제목, 오른쪽은 지구본 언어 선택 + 글자 크기.
+    # 지구본 버튼을 누르면 그 아래로 언어 목록이 펼쳐집니다(이벤트는 ui/events.py).
+    # 글자 크기는 브라우저에서만 동작합니다(ui/font_size.py).
+    with gr.Row(elem_id="top-row"):
+        header_md = gr.Markdown(f"# {APP_NAME}\n{TAGLINE}", elem_id="app-header", min_width=260)
+        with gr.Column(elem_id="topbar", scale=0, min_width=0):
+            with gr.Row(elem_id="top-controls"):
+                lang_btn = gr.Button(
+                    language_button_text(DEFAULT_LANGUAGE),
+                    size="sm",
+                    elem_id="lang-btn",
+                )
+                build_font_size_control()
+            language = gr.Radio(
+                choices=LANGUAGES,
+                value=DEFAULT_LANGUAGE,
+                show_label=False,
+                visible=False,
+                elem_id="language",
+            )
     notice_md = gr.Markdown(NOTICE, elem_id="notice")
 
     source_notes = []  # 두 탭에 들어가는 출처·기준일 문구 (언어 바뀌면 함께 갱신)
