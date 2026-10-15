@@ -33,8 +33,7 @@ UI A는 **화면에 보이는 것**을 만들고, UI B는 **그 화면이 어떻
                      [🌐 한국어] [글자 크기 : 보통 ⌄]   ← #topbar (lang_btn, #font-size) — 모든 화면 맨 위 오른쪽
 
 [홈] #screen-home
- 판사 캐릭터
- 서명 잠깐만 / 한 줄 소개             ← .home-hero
+ 앱 로고 배너 / 한 줄 소개           ← .home-hero, 가운데 정렬 (판사 캐릭터가 그려진 배너 = 서비스명 h1, ui/assets/logo-banner.webp. 한국어 외 언어는 로고 아래 서비스명 표시)
  [노동법 챗봇] [악덕 사업주] [계산기]   ← menu_btns (세로로 쌓인 큰 버튼)
  ⚠️ 면책 고지 · ☎1350                 ← .notice (README 6-1, 모든 화면에 항상 보이게)
 

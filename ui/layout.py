@@ -7,6 +7,7 @@ from pathlib import Path
 import gradio as gr
 
 from ui.content import (
+    APP_NAME,
     ASK_BTN,
     CLEAR_BTN,
     DEFAULT_LANGUAGE,
@@ -52,7 +53,14 @@ THEME = gr.themes.Base(
     neutral_hue="stone",
     # Pretendard는 style.css의 @import로 불러오고, 여기서는 이름만 지정합니다.
     # 국기 전용 폰트를 맨 앞에 둡니다. 국기 이모지 글자에만 쓰이고(unicode-range) 나머지 글자는 Pretendard로 나옵니다.
-    font=["Twemoji Country Flags", "Pretendard Variable", "Pretendard", "-apple-system", "system-ui", "sans-serif"],
+    font=[
+        "Twemoji Country Flags",
+        "Pretendard Variable",
+        "Pretendard",
+        "-apple-system",
+        "system-ui",
+        "sans-serif",
+    ],
 ).set(
     body_background_fill=PAPER,
     body_background_fill_dark=PAPER_DARK,
@@ -107,6 +115,8 @@ THEME = gr.themes.Base(
 
 # 답변 옆에 붙는 판사 얼굴. 로딩 중 전신 애니메이션은 style.css의 .judge-busy가 맡습니다.
 JUDGE_AVATAR = Path(__file__).parent / "assets" / "judge-avatar.webp"
+# 앱 로고 (홈 맨 위). 판사 캐릭터와 서비스명이 그려진 어두운 배경의 배너 한 장입니다.
+LOGO_URL = "/gradio_api/file=ui/assets/logo-banner.webp"
 
 # 아래 HTML 조각은 언어를 바꿀 때 ui/events.py가 같은 함수로 다시 만들어 끼웁니다.
 # t는 ui/content.py의 localize(언어)가 돌려주는 문구 묶음입니다.
@@ -124,11 +134,15 @@ def chat_empty_html(t):
 
 
 def home_hero_html(t):
-    """홈 맨 위: 판사 캐릭터 + 서비스명 + 한 줄 소개"""
+    """홈 맨 위 가운데: 앱 로고(판사 캐릭터가 함께 그려진 배너 한 장) + 한 줄 소개.
+    로고가 곧 서비스명(h1)입니다. 로고 글자는 한국어라서, 다른 언어일 때는 그 언어의 서비스명을 함께 보여줍니다."""
+    name = (
+        "" if t["app_name"] == APP_NAME else f'<p class="home-name">{t["app_name"]}</p>'
+    )
     return f"""
 <div class="home-hero">
-  <div class="judge-figure" role="img" aria-label="{t['judge_alt']}"></div>
-  <h1>{t["app_name"]}</h1>
+  <h1 class="home-logo"><img src="{LOGO_URL}" alt="{t['app_name']}"></h1>
+  {name}
   <p>{t["tagline"]}</p>
 </div>
 """
@@ -264,7 +278,9 @@ def _chat_tabs():
                 ask_btn = gr.Button(
                     ASK_BTN, variant="primary", scale=1, min_width=96, elem_id="ask-btn"
                 )
-            clear_btn = gr.Button(CLEAR_BTN, size="sm", variant="secondary", elem_id="clear-btn")
+            clear_btn = gr.Button(
+                CLEAR_BTN, size="sm", variant="secondary", elem_id="clear-btn"
+            )
 
         with gr.Tab(TAB_FAQ, id="faq", elem_id="tab-faq") as tab_faq:
             faq_accordions = []  # 질문(아코디언 라벨)
