@@ -30,7 +30,7 @@ short_description: 근거 조문과 함께 답하는 노동법 RAG 챗봇
 
 **일조 머스크 (1JO Musk) · 팀 프로젝트**
 
-🌐 **배포 주소: [huggingface.co/spaces/navill/team-chatpdf](https://huggingface.co/spaces/navill/team-chatpdf)** · 최종 버전 `v1.0`
+🌐 **배포 주소: [huggingface.co/spaces/navill/team-chatpdf](https://huggingface.co/spaces/navill/team-chatpdf)** · 최신 버전 [`v1.1.0`](https://github.com/TEAM-SPACEH/ChatPDF/releases/tag/v1.1.0)
 
 [서비스 소개](#intro) · [주요 기능](#features) · [기술 스택](#tech-stack) · [아키텍처](#architecture) · [실행 방법](#quick-start) · [평가](#evaluation)
 
@@ -68,7 +68,7 @@ short_description: 근거 조문과 함께 답하는 노동법 RAG 챗봇
 
 ## ✨ 서비스 미리보기
 
-**배포 화면 (v1.0)**: 배포 주소에서 "회사가 해고하려면 며칠 전에 알려줘야 하나요?"를 물었을 때의 답변과 근거 조문
+**배포 화면 (v1.0.0)**: 배포 주소에서 "회사가 해고하려면 며칠 전에 알려줘야 하나요?"를 물었을 때의 답변과 근거 조문
 
 <img src="docs/images/배포화면.png" width="720" />
 
@@ -242,7 +242,7 @@ python app.py
 
 ### 배포 (Hugging Face Spaces)
 
-- 주소: https://huggingface.co/spaces/navill/team-chatpdf (`v1.0` = main `d72adff`)
+- 주소: https://huggingface.co/spaces/navill/team-chatpdf — 버전 기록은 [Releases](https://github.com/TEAM-SPACEH/ChatPDF/releases) (`v1.0.0` 첫 배포 `d72adff`, `v1.1.0` `4106472`)
 - 하드웨어: ZeroGPU (Free). 무료 CPU Basic은 PRO 구독이 필요해 ZeroGPU를 쓰고, 앱은 GPU를 쓰지 않습니다 (`app.py`의 빈 `@spaces.GPU` 함수 참고)
 - `OPENAI_API_KEY`는 Space의 **Secret**으로만 등록합니다.
 - `chroma_db/`와 원본 PDF는 git에 없으므로, main 코드(`git archive origin/main`)와 로컬 `chroma_db/`를 `hf upload`로 함께 올립니다. main을 바꾸면 같은 방법으로 다시 올려 **main = 배포 코드**를 유지합니다.
