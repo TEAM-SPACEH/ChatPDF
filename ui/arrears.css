@@ -1,32 +1,11 @@
 /* 임금체불 사업주 조회 화면 (ui/arrears_tab.py) — 이 화면에서만 쓰는 스타일.
    기존 ui/style.css는 건드리지 않고, 색은 테마 변수(var(--...))를 그대로 씁니다.
-   결과 카드 구성: 가상 데이터 배너 → 입력한 번호 → 섹션(h4)마다 위쪽 구분선 → 아래 배너 */
+   결과 카드 구성: 제목 줄(목업 배지) → 입력한 번호 → 섹션(h4)마다 위쪽 구분선 */
 
 /* gr.HTML은 padding=False여도 안쪽 상자(.html-container)에 10·12px 여백이 남아
    배너·결과 카드만 다른 요소보다 안쪽으로 들어가 보이므로 지움 */
 #screen-villain .html-container {
   padding: 0 !important;
-}
-
-.arrears-mock-banner {
-  margin: 0 0 12px;
-  padding: 12px 14px;
-  border-radius: 12px;
-  border: 1px solid var(--border-color-accent-subdued);
-  background: var(--color-accent-soft);
-  color: var(--body-text-color);
-  font-size: 0.92rem;
-  font-weight: 600;
-  line-height: 1.6;
-}
-.arrears-mock-banner span {
-  font-weight: 400;
-  color: var(--body-text-color-subdued);
-}
-.arrears-demo-label p {
-  margin: 8px 0 0;
-  font-size: 0.9rem;
-  color: var(--body-text-color-subdued);
 }
 
 /* ───────── 결과 카드 ───────── */
@@ -86,12 +65,6 @@
   margin-bottom: 0;
 }
 
-/* 맨 아래 배너 — 위와 같은 안내라 한 단계 작게 */
-.arrears-result > .arrears-mock-banner:last-child {
-  margin: 20px 0 0;
-  font-size: 0.85rem;
-}
-
 /* 입력한 사업자등록번호 — 옅은 바탕의 한 줄 */
 .arrears-query {
   display: flex;
@@ -131,17 +104,50 @@
   color: var(--lg-accent);
 }
 
-/* 가상 명단 기록 — 점 목록 대신 기록마다 옅은 버건디 카드 */
-.arrears-records li {
-  margin-bottom: 8px;
-  padding: 10px 14px;
+/* 제목 줄 — 왼쪽 화면 제목, 오른쪽 작은 목업 배지 */
+.arrears-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 12px;
+}
+.arrears-head-title {
+  font-weight: 700;
+}
+.arrears-mock-badge {
+  padding: 1px 8px;
+  border: 1px solid var(--border-color-primary);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  color: var(--body-text-color-subdued);
+  white-space: nowrap;
+}
+
+/* 명단공개 기록 — 항목 이름과 값을 두 칸 표로 */
+.arrears-record {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 8px 20px;
+  margin: 0 0 10px;
+  padding: 14px 16px;
   border-left: 3px solid var(--lg-accent);
   border-radius: 8px;
   background: var(--color-accent-soft);
   font-size: 0.94rem;
 }
-.arrears-records li::before {
-  content: none;
+.arrears-record dt {
+  color: var(--body-text-color-subdued);
+}
+.arrears-record dd {
+  margin: 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.arrears-meta {
+  font-size: 0.85rem;
+  color: var(--body-text-color-subdued);
 }
 
 .arrears-empty {
