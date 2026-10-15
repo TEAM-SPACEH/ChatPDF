@@ -53,9 +53,9 @@ def build_wage_tab():
 
     with gr.Column(visible=False, elem_id="wage-modal") as modal:
         with gr.Column(elem_id="wage-modal-box"):
-            gr.Markdown("### 계산 결과")
-            out = gr.Markdown()
-            close_btn = gr.Button("닫기")
+            gr.Markdown("### 계산 결과", elem_id="wage-modal-title")
+            out = gr.Markdown(elem_id="wage-result")
+            close_btn = gr.Button("닫기", elem_id="wage-close")
 
     pay_type.change(toggle_inputs, pay_type, [weekly_hours, daily_hours, five_or_more])
     btn.click(open_modal,

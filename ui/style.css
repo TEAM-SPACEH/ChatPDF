@@ -853,6 +853,29 @@ html[data-font-size="xxl"] {
     width: 32px !important;
     height: 32px !important;
   }
+  /* 말풍선 줄 좌우 여백(기본 20px)을 없애 폭을 넓게 */
+  #chatbot .message-row {
+    margin: 8px 0 4px !important;
+  }
+
+  /* 답변 준비 중 — 숨긴 얼굴 아바타가 왼쪽에 48px 빈자리를 남기므로 아예 빼서
+     전신 판사가 말풍선들과 같은 왼쪽 선에서 시작하게 */
+  #chatbot .bot-row:has(.judge-busy) .avatar-container {
+    display: none !important;
+  }
+  /* 준비 중 문구 아래 복사 버튼은 복사할 게 없어서 숨김 */
+  #chatbot .bot-row:has(.judge-busy) + .message-buttons {
+    display: none !important;
+  }
+  .judge-busy {
+    --w: 52px;
+    margin-right: 6px;
+  }
+  /* 처리 중에 Gradio가 입력칸에 그리는 테두리(.generating)는 바깥 #input-row 테두리와 겹쳐 이중선이 됨 */
+  #question .wrap.generating {
+    border: none !important;
+  }
+
   /* 빈 채팅 안내 — 캐릭터와 글을 작게 */
   .judge-hero {
     gap: 10px;
@@ -911,27 +934,131 @@ html[data-font-size="xxl"] {
 }
 
 /* ───────────── 최저임금 계산기 — 결과 모달 (ui/wage_tab.py) ───────────── */
+/* 구성: 제목(#wage-modal-title) / 결과(#wage-result, 길면 이 부분만 스크롤) / 닫기(#wage-close, 항상 아래 고정).
+   결과 문구는 wage/calc.py의 format_result()가 만든 목록이고, 순서는 ①최저시급 ②환산 시급 ③판단 ④참고… ⑤관련 조문입니다.
+   ③판단 줄은 강조 카드로 보여주고, 최저임금 미달(문구에 굵은 글씨가 있음)이면 버건디로 칠합니다. */
 #wage-modal {
   position: fixed;
   inset: 0;
   z-index: 1000;
-  background: rgba(0, 0, 0, 0.45);
+  background: rgba(28, 24, 23, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 16px;
 }
 #wage-modal-box {
-  background: var(--background-fill-primary);
-  border-radius: 12px;
-  padding: 24px;
+  flex: 0 1 auto !important; /* Gradio 열(Column)이 세로로 늘어나 빈 공간이 생기지 않게 */
+  display: flex;
+  flex-direction: column;
+  gap: 0 !important;
   width: 100%;
-  max-width: 560px;
-  max-height: 85vh;
-  overflow-y: auto;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  max-width: 520px;
+  max-height: min(85vh, 85dvh);
+  padding: 0;
+  overflow: hidden;
+  background: var(--background-fill-primary);
+  border-radius: 18px;
+  box-shadow: 0 12px 40px rgba(28, 24, 23, 0.28);
 }
-#wage-modal-box .prose {
-  font-size: 1.05rem;
-  line-height: 1.7;
+
+/* 제목 — 위쪽 띠, 아래 가는 선으로 결과와 구분 */
+#wage-modal-title {
+  flex: 0 0 auto;
+  padding: 18px 22px 14px !important;
+  border: none !important; /* Gradio 블록 테두리·둥근 모서리는 지우고 아래 선만 */
+  border-bottom: 1px solid var(--border-color-primary) !important;
+  border-radius: 0 !important;
+}
+#wage-modal-title h3 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+/* 결과 — 남는 높이를 차지하고 넘치면 여기만 스크롤 */
+#wage-result {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto !important;
+  padding: 14px 22px 4px !important;
+}
+#wage-result .prose {
+  font-size: 0.98rem;
+  line-height: 1.6;
+}
+/* 목록 — 동그라미 글머리표를 없애고 줄마다 가는 구분선 */
+#wage-result ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+#wage-result li {
+  margin: 0;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border-color-primary);
+}
+#wage-result li::marker,
+#wage-result li::before {
+  content: none;
+}
+#wage-result li:last-child {
+  border-bottom: none;
+}
+/* ③판단 — 강조 카드 (최저임금 이상: 차분한 바탕) */
+#wage-result li:nth-child(3) {
+  margin: 6px 0;
+  padding: 12px 14px;
+  border: 1px solid var(--border-color-primary);
+  border-radius: 12px;
+  background: var(--body-background-fill);
+  font-weight: 600;
+}
+/* ③판단 — 최저임금 미달 가능성(굵은 글씨가 들어감): 버건디 카드 */
+#wage-result li:nth-child(3):has(strong) {
+  border-color: transparent;
+  background: var(--color-accent-soft);
+  color: var(--lg-accent);
+}
+#wage-result li:nth-child(3) strong {
+  color: inherit;
+}
+/* 참고 줄은 한 단계 흐리게 */
+#wage-result li:nth-child(n + 4) {
+  font-size: 0.9rem;
+  color: var(--body-text-color-subdued);
+}
+/* ※ 면책 문구와 최저임금위원회 링크 */
+#wage-result p {
+  margin: 12px 0 0;
+  font-size: 0.85rem;
+  color: var(--body-text-color-subdued);
+}
+#wage-result a {
+  color: var(--lg-accent);
+  font-weight: 600;
+  text-underline-offset: 3px;
+}
+
+/* 닫기 — 아래 띠에 고정된 꽉 찬 버튼 */
+#wage-close {
+  flex: 0 0 auto;
+  align-self: stretch;
+  width: auto !important; /* Gradio 기본 width: 100%에 좌우 margin이 더해져 오른쪽으로 삐져나오지 않게 */
+  margin: 12px 22px 18px;
+  min-height: 46px;
+  background: var(--button-primary-background-fill) !important;
+  border: none !important;
+  border-radius: 12px !important;
+  color: var(--button-primary-text-color) !important;
+  font-size: 1rem;
+  font-weight: 600;
+}
+#wage-close:hover {
+  background: var(--button-primary-background-fill-hover) !important;
+}
+#wage-close:focus-visible {
+  outline: 2px solid var(--lg-accent);
+  outline-offset: 2px;
 }
