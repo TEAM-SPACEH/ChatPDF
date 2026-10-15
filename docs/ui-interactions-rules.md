@@ -34,7 +34,7 @@ B가 하지 않는 일 (A 또는 RAG 담당):
 
 | 파일 | 역할 |
 | --- | --- |
-| `ui/events.py` | `bind_events(ui)` 하나만 둡니다. 컴포넌트에 이벤트를 연결합니다. 로직은 넣지 않습니다. |
+| `ui/events.py` | 진입점은 `bind_events(ui)` 하나입니다. 컴포넌트에 이벤트를 연결합니다. 로직은 넣지 않습니다. (예외: 화면 전환용 작은 함수 `_show_screen`, [5-4](#5-4-화면-전환-홈--각-화면)) |
 | `ui/chat_actions.py` | 이벤트가 호출하는 핸들러 함수와 벡터DB 준비(`prepare_db`)를 둡니다. RAG 결과를 화면용 데이터로 가공합니다. |
 
 - RAG 기능은 `rag.answer_chain`의 `answer`만 import해서 씁니다. 그 밖의 RAG 내부 코드를 직접 가져다 쓰지 않습니다.
@@ -51,6 +51,9 @@ A의 `build_layout()`은 아래 key를 **빠짐없이, 이 이름 그대로** �
 | `ask_btn` | `gr.Button` | 질문하기 | `.click()`으로 전송 |
 | `clear_btn` | `gr.Button` | 대화 초기화 | `.click()`으로 채팅·상태 비우기 |
 | `example_btns` | `list[gr.Button]` | 추천 질문 버튼들 | 각 버튼 `.click()`으로 질문 자동 전송 |
+| `screens` | `dict[str, gr.Column]` | 화면 4개 — key는 `"home"`, `"chat"`, `"villain"`, `"calc"` | 메뉴·홈 버튼을 누르면 하나만 보이게 전환 |
+| `menu_btns` | `dict[str, gr.Button]` | 홈 메뉴 버튼 — key는 `"chat"`, `"villain"`, `"calc"` (`screens`의 key와 같음) | `.click()`으로 같은 이름의 화면으로 전환 |
+| `home_btns` | `list[gr.Button]` | 각 화면 왼쪽 위 뒤로가기 아이콘 버튼들 (글자 "홈으로"는 숨기고 화면 낭독기만 읽음) | `.click()`으로 홈 화면으로 전환 |
 
 정해둔 세부 사항:
 
@@ -89,7 +92,7 @@ A의 `build_layout()`은 아래 key를 **빠짐없이, 이 이름 그대로** �
 2. 답변 자리 `{"role": "assistant", "content": LOADING_TEXT}`을 추가하고 바로 `yield`합니다. (로딩 표시)
    - `LOADING_TEXT`에는 보이지 않는 표식 `<span class="judge-busy"></span>`이 들어 있습니다. 이 표식이 채팅창에 있는 동안 A의 캐릭터가 움직이므로 **지우지 마세요.** 답변·오류·빈 답변 어느 경우든 이 메시지를 덮어써야 캐릭터가 멈춥니다.
 3. `answer(question, OPENAI_API_KEY, db)`(`rag/answer_chain.py`)가 `yield`하는 텍스트로 마지막 assistant 메시지의 `content`를 **덮어씁니다**. `answer()`는 조각이 아니라 **지금까지 누적된 전체 텍스트**를 돌려주므로 이어 붙이지 않습니다.
-4. 출처는 `answer()`의 마지막 출력에 이미 포함되어 옵니다 ([5-5](#5-5-출처-표시)).
+4. 출처는 `answer()`의 마지막 출력에 이미 포함되어 옵니다 ([5-6](#5-6-출처-표시)).
 5. 전송 후 `question` 입력창은 비웁니다.
 
 권장 시그니처:
@@ -109,18 +112,25 @@ for btn in ui["example_btns"]:
     btn.click(on_ask, inputs=[btn, ui["chatbot"]], outputs=[ui["chatbot"], ui["question"]])
 ```
 
-### 5-4. 대화 초기화 (`on_clear`)
+### 5-4. 화면 전환 (홈 ↔ 각 화면)
+
+- `menu_btns`의 각 버튼은 **같은 key의 화면**을, `home_btns`의 버튼은 `"home"` 화면을 보이게 합니다.
+- 출력은 `screens`의 Column 4개이고, 고른 화면만 `visible=True`, 나머지는 `False`로 돌려줍니다. 화면을 바꿔도 채팅 기록은 그대로 남습니다(숨기기만 함).
+- 서버 왕복을 빠르게 하려고 `queue=False`, `show_progress="hidden"`으로 걸고, 화면이 바뀌면 맨 위로 스크롤합니다(`js`).
+- 화면 전환은 상태가 없는 단순 전환이라 핸들러는 `events.py` 안의 작은 함수로 둡니다(`chat_actions.py`에 넣지 않음).
+
+### 5-5. 대화 초기화 (`on_clear`)
 
 - `chatbot`은 빈 리스트, `question`은 빈 문자열로 되돌립니다.
 - 벡터DB는 **유지**합니다. 초기화 후에도 바로 다시 질문할 수 있어야 합니다.
 
-### 5-5. 출처 표시
+### 5-6. 출처 표시
 
 - 출처는 **RAG 담당이 처리**합니다. `answer()`가 마지막 `yield`에 답변 + 출처(`---` / `**검색된 참고 문서**` / 목록)를 붙여서 돌려줍니다 (`rag/source_formatter.py`, PR #5).
 - B는 `answer()`가 준 텍스트를 그대로 채팅창에 덮어쓰기만 하므로 출처 처리 코드를 따로 두지 않습니다. 같은 기능이 두 곳에 생기지 않게 하기 위해서입니다.
 - 출처 형식을 바꾸고 싶으면 RAG 담당에게 요청합니다.
 
-### 5-6. 오류 처리
+### 5-7. 오류 처리
 
 | 상황 | 처리 |
 | --- | --- |

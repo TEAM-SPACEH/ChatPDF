@@ -9,7 +9,7 @@ UI A는 **화면에 보이는 것**을 만들고, UI B는 **그 화면이 어떻
 
 | 구분 | 파일 |
 | --- | --- |
-| ✅ 수정하는 파일 | `ui/layout.py`, `ui/content.py`, `ui/style.css` |
+| ✅ 수정하는 파일 | `ui/layout.py`, `ui/content.py`, `ui/style.css`, `ui/assets/` |
 | ❌ 수정하지 않는 파일 | `ui/events.py`, `ui/chat_actions.py`, `rag/` |
 
 `app.py`는 테마(`THEME`)와 CSS를 `demo.launch()`에 넘기는 줄만 A와 관련 있습니다.
@@ -27,16 +27,31 @@ UI A는 **화면에 보이는 것**을 만들고, UI B는 **그 화면이 어떻
 
 ## 2. 화면 구조
 
+화면은 4개이고, 한 번에 하나만 보입니다 (`screens`). 주소는 그대로이고 화면만 바뀝니다.
+
 ```
-🛡️ 노동 지킴이 / 한 줄 소개          ← #app-header
-⚠️ 면책 고지 · ☎1350                ← #notice (README 6-1, 항상 보이게)
-[💬 질문하기] [📋 Q&A] [⚖️ 법령 요약]   ← gr.Tabs
- ├ 질문하기: chatbot → 추천 질문 → 입력창 + 질문하기 → 대화 초기화
- ├ Q&A: 아코디언 + 출처·기준일
- └ 법령 요약: 요약 Markdown + 출처·기준일
+[홈] #screen-home
+ 판사 캐릭터
+ 노동 지킴이 / 한 줄 소개             ← .home-hero
+ [노동법 챗봇] [악덕 사업주] [계산기]   ← menu_btns (세로로 쌓인 큰 버튼)
+ ⚠️ 면책 고지 · ☎1350                 ← .notice (README 6-1, 모든 화면에 항상 보이게)
+
+[노동법 챗봇] #screen-chat
+ ‹      노동법 챗봇 (가운데)            ← .screen-bar (‹ = home_btns, 뒤로가기 아이콘)
+ ⚠️ 면책 고지
+ [질문하기] [자주 묻는 질문]            ← gr.Tabs (#tabs)
+  ├ 질문하기: chatbot → 추천 질문 → 입력창 + 질문하기 → 대화 지우기
+  └ 자주 묻는 질문: 아코디언 + 출처·기준일
+
+[악덕 사업주] #screen-villain, [계산기] #screen-calc
+ ‹      메뉴 이름 (가운데)
+ ⚠️ 면책 고지
+ 판사 캐릭터 + "준비 중" 말풍선          ← 기능은 아직 미정
 ```
 
-- 탭 전환은 Gradio가 처리하므로 화면 전환용 `.click()`을 만들지 않습니다.
+- 화면 전환(홈 ↔ 각 화면)은 `.click()`이 필요하므로 B의 `events.py`에서 연결합니다 (4번 표 `screens`·`menu_btns`·`home_btns`).
+- 챗봇 화면 안의 탭 전환은 Gradio가 처리하므로 `.click()`을 만들지 않습니다.
+- 메뉴 이름·준비 중 문구는 `ui/content.py`의 `MENU_ITEMS`, `COMING_SOON`에 둡니다.
 - 탭 이름은 모바일(390px)에서 세 개가 한 줄에 들어가도록 짧게 둡니다. 길어지면 Gradio가 탭을 `⋯` 메뉴 안으로 숨깁니다.
 
 ## 3. 파일 역할
@@ -44,7 +59,7 @@ UI A는 **화면에 보이는 것**을 만들고, UI B는 **그 화면이 어떻
 | 파일 | 역할 |
 | --- | --- |
 | `ui/layout.py` | `build_layout()`이 컴포넌트를 배치하고 **dict로 반환**합니다. 테마 `THEME`도 여기서 정의합니다. |
-| `ui/content.py` | 서비스명, 안내 문구, 추천 질문, Q&A, 법령 요약 같은 **글자만** 둡니다. 문구 검수는 이 파일만 보면 됩니다. |
+| `ui/content.py` | 서비스명, 메뉴 이름, 안내 문구, 추천 질문, Q&A 같은 **글자만** 둡니다. 문구 검수는 이 파일만 보면 됩니다. |
 | `ui/style.css` | 색·간격·반응형. |
 
 `layout.py` 규칙:
@@ -64,6 +79,9 @@ UI A는 **화면에 보이는 것**을 만들고, UI B는 **그 화면이 어떻
 | `ask_btn` | `gr.Button` | 질문하기 | `.click()`으로 전송 |
 | `clear_btn` | `gr.Button` | 대화 초기화 | `.click()`으로 채팅·입력창 비우기 |
 | `example_btns` | `list[gr.Button]` | 추천 질문 버튼들 | 각 버튼 `.click()`으로 질문 자동 전송 |
+| `screens` | `dict[str, gr.Column]` | 화면 4개 — key는 `"home"`, `"chat"`, `"villain"`, `"calc"` | 메뉴·홈 버튼을 누르면 하나만 보이게 전환 |
+| `menu_btns` | `dict[str, gr.Button]` | 홈 메뉴 버튼 — key는 `"chat"`, `"villain"`, `"calc"` (`screens`의 key와 같음) | `.click()`으로 같은 이름의 화면으로 전환 |
+| `home_btns` | `list[gr.Button]` | 각 화면 왼쪽 위 뒤로가기 아이콘 버튼들 (글자 "홈으로"는 숨기고 화면 낭독기만 읽음) | `.click()`으로 홈 화면으로 전환 |
 
 **정해둔 세부 사항**
 - `example_btns`는 버튼 **리스트**입니다. B는 버튼에 적힌 글자(`value`)를 질문으로 사용하므로, 버튼 글자 = 실제 질문 문장으로 씁니다.
