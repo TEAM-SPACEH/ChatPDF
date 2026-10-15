@@ -9,6 +9,8 @@ from ui.content import (
     CHAT_PLACEHOLDER,
     EXAMPLE_QUESTIONS,
     FAQ_ITEMS,
+    JUDGE_BUSY,
+    JUDGE_IDLE,
     LABOR_LAW_MD,
     NOTICE,
     QUESTION_PLACEHOLDER,
@@ -16,49 +18,96 @@ from ui.content import (
     TAGLINE,
 )
 
-# 테마 — "계약서를 형광펜으로 검토하는" 느낌: 흰 종이, 남색 잉크, 노란 형광펜(style.css).
-# Gradio 6에서는 app.py의 demo.launch(theme=...)로 적용합니다.
-INK = "#1B2A41"
-INK_SOFT = "#5B6576"
-PAPER = "#F7F8FA"
-RULE = "#DDE1E8"
+# 테마 — "판사봉 캐릭터" 톤: 가발 크림 배경, 법복 차콜 글자, 버건디 포인트 하나.
+# 색 근거는 docs/ui-tone-redesign-spec.md. Gradio 6에서는 app.py의 demo.launch(theme=...)로 적용합니다.
+PAPER = "#FAF8F5"
+SURFACE = "#FFFFFF"
+INK = "#2B2523"
+INK_SOFT = "#6E645E"
+RULE = "#E8E3DE"
+ACCENT = "#7A2E3A"
+ACCENT_HOVER = "#8F3A47"
+ACCENT_SOFT = "#F5EBEC"
+ACCENT_SOFT_BORDER = "#EAD5D8"
+
+# 다크 모드 — 같은 색을 뒤집어서 (포인트는 로즈)
+PAPER_DARK = "#1C1817"
+SURFACE_DARK = "#252120"
+INK_DARK = "#EDE8E3"
+INK_SOFT_DARK = "#A89F98"
+RULE_DARK = "#3A3432"
+ACCENT_DARK = "#E3A3AC"
+ACCENT_HOVER_DARK = "#EDBBC2"
+ACCENT_SOFT_DARK = "#3A2629"
+ACCENT_SOFT_BORDER_DARK = "#4A3135"
 
 THEME = gr.themes.Base(
-    neutral_hue="slate",
+    neutral_hue="stone",
     # Pretendard는 style.css의 @import로 불러오고, 여기서는 이름만 지정합니다.
     font=["Pretendard Variable", "Pretendard", "-apple-system", "system-ui", "sans-serif"],
 ).set(
     body_background_fill=PAPER,
+    body_background_fill_dark=PAPER_DARK,
     body_text_color=INK,
+    body_text_color_dark=INK_DARK,
     body_text_color_subdued=INK_SOFT,
+    body_text_color_subdued_dark=INK_SOFT_DARK,
     border_color_primary=RULE,
-    color_accent=INK,
-    color_accent_soft="#E9EDF4",
-    color_accent_soft_dark="#1E2A3D",
-    block_radius="14px",
+    border_color_primary_dark=RULE_DARK,
+    background_fill_primary=SURFACE,
+    background_fill_primary_dark=SURFACE_DARK,
+    # 채팅창 안쪽 면 — 회색 대신 카드와 같은 흰 면
+    background_fill_secondary=SURFACE,
+    background_fill_secondary_dark=SURFACE_DARK,
+    color_accent=ACCENT,
+    color_accent_soft=ACCENT_SOFT,
+    color_accent_soft_dark=ACCENT_SOFT_DARK,
+    # 질문 말풍선 테두리 (기본값은 파란색)
+    border_color_accent_subdued=ACCENT_SOFT_BORDER,
+    border_color_accent_subdued_dark=ACCENT_SOFT_BORDER_DARK,
+    block_background_fill=SURFACE,
+    block_background_fill_dark=SURFACE_DARK,
+    block_radius="12px",
     block_shadow="none",
     block_border_color=RULE,
+    block_border_color_dark=RULE_DARK,
     input_radius="12px",
     input_shadow="none",
-    input_background_fill="#FFFFFF",
+    input_background_fill=SURFACE,
+    input_background_fill_dark=SURFACE_DARK,
     input_border_color=RULE,
+    input_border_color_dark=RULE_DARK,
     input_border_width="1px",
-    input_border_color_focus=INK,
+    input_border_color_focus=ACCENT,
+    input_border_color_focus_dark=ACCENT_DARK,
     button_large_radius="12px",
     button_medium_radius="12px",
     button_small_radius="999px",
-    button_primary_background_fill=INK,
-    button_primary_background_fill_hover="#2A3D5C",
+    button_primary_background_fill=ACCENT,
+    button_primary_background_fill_hover=ACCENT_HOVER,
     button_primary_text_color="#FFFFFF",
-    button_primary_border_color=INK,
-    button_primary_border_color_hover="#2A3D5C",
-    button_primary_border_color_dark="#D6DEEC",
-    button_primary_background_fill_dark="#D6DEEC",
-    button_primary_background_fill_hover_dark="#FFFFFF",
-    button_primary_text_color_dark="#101826",
+    button_primary_border_color=ACCENT,
+    button_primary_border_color_hover=ACCENT_HOVER,
+    button_primary_background_fill_dark=ACCENT_DARK,
+    button_primary_background_fill_hover_dark=ACCENT_HOVER_DARK,
+    button_primary_text_color_dark=PAPER_DARK,
+    button_primary_border_color_dark=ACCENT_DARK,
+    button_primary_border_color_hover_dark=ACCENT_HOVER_DARK,
     button_primary_shadow="none",
     button_secondary_shadow="none",
 )
+
+# 질문하기 탭 맨 위 캐릭터 + 말풍선. 말풍선 문구 두 개를 다 넣어두고, CSS가
+# 채팅창의 로딩 표식(.judge-busy, ui/chat_actions.py의 LOADING_TEXT)을 보고 하나만 보여줍니다.
+JUDGE_HTML = f"""
+<div id="judge-row">
+  <div id="judge" role="img" aria-label="판사 캐릭터"></div>
+  <p id="judge-bubble" aria-live="polite">
+    <span class="judge-say-idle">{JUDGE_IDLE}</span>
+    <span class="judge-say-busy">{JUDGE_BUSY}</span>
+  </p>
+</div>
+"""
 
 
 def build_layout():
@@ -67,9 +116,10 @@ def build_layout():
 
     with gr.Tabs(elem_id="tabs"):
         with gr.Tab("질문하기", id="chat", elem_id="tab-chat"):
+            gr.HTML(JUDGE_HTML, padding=False)
             chatbot = gr.Chatbot(
                 show_label=False,
-                height=440,
+                height=380,
                 placeholder=CHAT_PLACEHOLDER,
                 elem_id="chatbot",
             )

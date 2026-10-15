@@ -25,7 +25,8 @@ DB_DIR = Path(os.getenv("CHROMA_DB_DIR", Path(__file__).parent.parent / "chroma_
 COLLECTION_NAME = "labor_laws"
 EMBEDDING_MODEL = "text-embedding-3-large"
 
-LOADING_TEXT = "⏳ 답변을 찾는 중..."
+# .judge-busy는 화면에 안 보이는 표식입니다. 이게 채팅창에 있는 동안 캐릭터가 움직입니다(ui/style.css).
+LOADING_TEXT = '<span class="judge-busy"></span>⏳ 답변을 찾는 중...'
 _API_KEY_PATTERN = re.compile(r"sk-[A-Za-z0-9_\-*]{4,}")
 
 # 앱 전체에서 한 번만 불러오는 벡터DB (사용자마다 새로 불러오지 않습니다)

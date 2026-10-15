@@ -86,7 +86,8 @@ A의 `build_layout()`은 아래 key를 **빠짐없이, 이 이름 그대로** �
 순서:
 
 1. 사용자 메시지 `{"role": "user", "content": 질문}`을 `chatbot`에 추가합니다.
-2. 답변 자리 `{"role": "assistant", "content": "⏳ 답변을 찾는 중..."}`을 추가하고 바로 `yield`합니다. (로딩 표시)
+2. 답변 자리 `{"role": "assistant", "content": LOADING_TEXT}`을 추가하고 바로 `yield`합니다. (로딩 표시)
+   - `LOADING_TEXT`에는 보이지 않는 표식 `<span class="judge-busy"></span>`이 들어 있습니다. 이 표식이 채팅창에 있는 동안 A의 캐릭터가 움직이므로 **지우지 마세요.** 답변·오류·빈 답변 어느 경우든 이 메시지를 덮어써야 캐릭터가 멈춥니다.
 3. `answer(question, OPENAI_API_KEY, db)`(`rag/answer_chain.py`)가 `yield`하는 텍스트로 마지막 assistant 메시지의 `content`를 **덮어씁니다**. `answer()`는 조각이 아니라 **지금까지 누적된 전체 텍스트**를 돌려주므로 이어 붙이지 않습니다.
 4. 출처는 `answer()`의 마지막 출력에 이미 포함되어 옵니다 ([5-5](#5-5-출처-표시)).
 5. 전송 후 `question` 입력창은 비웁니다.

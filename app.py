@@ -11,6 +11,10 @@ from ui.layout import THEME, build_layout
 load_dotenv()
 
 CSS_PATH = Path(__file__).parent / "ui" / "style.css"
+ASSETS_DIR = Path(__file__).parent / "ui" / "assets"
+
+# 캐릭터 스프라이트처럼 CSS에서 불러오는 이미지를 브라우저에 공개합니다.
+gr.set_static_paths(paths=[ASSETS_DIR])
 
 with gr.Blocks(title="노동 지킴이") as demo:
     ui = build_layout()
